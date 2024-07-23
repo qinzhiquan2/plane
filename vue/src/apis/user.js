@@ -13,11 +13,21 @@ export const loginAPI = ({ user, password }) => {
 }
 
 
-export const getLikeListAPI = ({ limit = 4 }) => {
+export const picUploadAPI = ({ user, pics }) => {
   return request({
-    url: '/goods/relevant',
-    params: {
-      limit
+    url: '/pic_upload',
+    method: 'POST',
+    data: {
+      user,
+      pics
     }
   })
 }
+// export const picUploadApi = ({ user, pics }) => {
+//   return request({
+//     url: '/pic_upload',
+//     params: {
+//       limit
+//     }
+//   })
+// }

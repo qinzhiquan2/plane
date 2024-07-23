@@ -11,7 +11,7 @@
  Target Server Version : 50617
  File Encoding         : 65001
 
- Date: 21/07/2024 16:20:45
+ Date: 23/07/2024 17:31:12
 */
 
 SET NAMES utf8mb4;
@@ -51,7 +51,7 @@ CREATE TABLE `tb_dr`  (
   `reporterNum` varchar(255) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL COMMENT '报告人工号',
   `reviseTime` datetime NULL DEFAULT NULL COMMENT '修改时间',
   `reviser` varchar(255) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL COMMENT '修改人',
-  `status` varchar(255) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL COMMENT '状态：待处理、暂存、处理中、已处理、草稿',
+  `status` varchar(255) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL COMMENT '状态：待处理、暂存、处理中、已处理、草稿、已删除',
   `subPart` varchar(255) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL COMMENT '子部件',
   `subZone` varchar(255) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL COMMENT '子区域',
   `suggestion` varchar(255) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL COMMENT '建议处理方案',
@@ -59,7 +59,7 @@ CREATE TABLE `tb_dr`  (
   `tempSaveByNum` varchar(255) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL COMMENT '处理人工号',
   `tempSaveTime` datetime NULL DEFAULT NULL COMMENT '处理时间',
   `timePro` datetime NULL DEFAULT NULL COMMENT '时间点',
-  `wipNum` varchar(255) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL,
+  `wipNum` varchar(255) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL COMMENT 'WIP号',
   `withDraw` varchar(255) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL,
   PRIMARY KEY (`id`) USING BTREE
 ) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8 COLLATE = utf8_general_ci ROW_FORMAT = Compact;
@@ -104,5 +104,26 @@ CREATE TABLE `tb_user`  (
 -- Records of tb_user
 -- ----------------------------
 INSERT INTO `tb_user` VALUES (1, '000000', '000000', '测试', NULL, '主任,工艺员');
+
+-- ----------------------------
+-- Table structure for tb_user_lines
+-- ----------------------------
+DROP TABLE IF EXISTS `tb_user_lines`;
+CREATE TABLE `tb_user_lines`  (
+  `id` int(11) NOT NULL AUTO_INCREMENT COMMENT 'id',
+  `lineId` int(11) NULL DEFAULT NULL COMMENT '飞机号id',
+  `lineQtn` varchar(255) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL COMMENT '飞机号1/4节点',
+  `lineValue` varchar(255) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL COMMENT '飞机号',
+  `userId` int(11) NULL DEFAULT NULL COMMENT '工号id',
+  `user` varchar(255) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL COMMENT '员工',
+  PRIMARY KEY (`id`) USING BTREE
+) ENGINE = InnoDB AUTO_INCREMENT = 4 CHARACTER SET = utf8 COLLATE = utf8_general_ci ROW_FORMAT = Compact;
+
+-- ----------------------------
+-- Records of tb_user_lines
+-- ----------------------------
+INSERT INTO `tb_user_lines` VALUES (1, 1, '2024-07-19 12:00', 'B-223G', 1, '000000');
+INSERT INTO `tb_user_lines` VALUES (2, 2, '2024-08-05 12:0', 'A6-EDV', 1, '000000');
+INSERT INTO `tb_user_lines` VALUES (3, 3, '2024-07-19 12:0', 'N109FE', 1, '000000');
 
 SET FOREIGN_KEY_CHECKS = 1;

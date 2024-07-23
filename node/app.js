@@ -43,10 +43,6 @@ app.use('/' ,routerIndex);
 //路由模块 end
 
 //暴露 文件
-// app.use(express.static(path.join(__dirname, 'public')));
-
-//暴露 文件
-app.use('/uploads',express.static('./uploads'));
 app.use('/public',express.static('./public'));
 
 //配置服务端口 端口号3000（启动文件）
