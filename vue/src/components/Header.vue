@@ -1,7 +1,9 @@
 <script setup>
+import { ref, defineEmits, onMounted, onUnmounted } from 'vue';
 import { useUserStore } from "@/stores/userStore";
 import { useRouter } from "vue-router";
 import { ElMessage } from "element-plus";
+import { drInitAPI } from "@/apis/index";
 
 const userStore = useUserStore();
 const router = useRouter();
@@ -27,8 +29,46 @@ const logout = () => {
 const replaceUrl = (path, query) => {
   router.replace({ path,query  });
 };
-</script>
 
+let intervalId = null;
+
+onMounted(() => {
+  drInit()
+  // 当组件挂载后开始定时器
+  intervalId = setInterval(() => {
+    drInit()
+  }, 10000); // 每秒增加count的值
+});
+
+onUnmounted(() => {
+  // 当组件卸载前清除定时器
+  if (intervalId) {
+    clearInterval(intervalId);
+  }
+});
+
+const emit = defineEmits(['initData', 'download']);
+// 初始化数据
+let drInitData = ref({})
+const drInit = async () => {
+  let page = {
+    user: userStore.userInfo.user
+  }
+  const res = await drInitAPI(page);
+  drInitData.value = res.result;
+  emit('initData', { ...drInitData.value }); 
+}
+
+// 刷新页面
+const refreshFun = () => {
+  window.location.reload(); 
+};
+
+// 下载
+const downloadFun = () => {
+  emit('download', {}); 
+};
+</script>
 
 <template>
   <header>
@@ -51,18 +91,21 @@ const replaceUrl = (path, query) => {
                 </el-dropdown-menu>
               </template>
             </el-dropdown>
-            <el-badge class="backlog" :value="12" :offset="[0, 7]">
+            <el-badge class="backlog" :value="drInitData.unproQty" :offset="[0, 7]">
               <el-button size="small" type="warning">待办</el-button>
+            </el-badge>
+            <el-badge class="backlog" :value="drInitData.draftQty" :offset="[0, 7]">
+              <el-button size="small" type="success">草稿</el-button>
             </el-badge>
           </div>
           <div class="header-right">
             <el-tooltip content="刷新" placement="bottom">
-              <el-button size="small" circle
+              <el-button @click="refreshFun()" size="small" circle
                 ><el-icon><Refresh /></el-icon
               ></el-button>
             </el-tooltip>
             <el-tooltip content="下载" placement="bottom">
-              <el-button size="small" circle
+              <el-button @click="downloadFun()" size="small" circle
                 ><el-icon><Download /></el-icon
               ></el-button>
             </el-tooltip>

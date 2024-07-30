@@ -1,69 +1,82 @@
 <template>
   <div class="body">
     <div class="container">
-      <Header />
+      <Header @initData="handleInitData" @download="handleDownload" />
       <main>
         <div class="dr-list">
           <div class="main">
-            <div class="new-dr item-box">
+            <div class="new-dr item-box" v-for="item in drList" :key="item.id">
               <div class="item-header">
                 <div class="title">
-                  <div class="ac-no">A6-EDV</div>
+                  <div class="ac-no">{{ item.acNum }}</div>
                   <div class="status red">
                     <el-icon><Flag /></el-icon>
-                    待处理
+                    {{ item.status }}
                   </div>
                 </div>
                 <div class="info">
                   <div class="qtr-node">
-                    <span>1/4节点：2024-08-05 12:00</span>
+                    <span>1/4节点：{{ item.quarterNode }}</span>
                   </div>
                   <div class="item-id">1/1437# (ID:16945)</div>
                 </div>
               </div>
               <div class="item-content">
-                <div class="row">
-                  <div>
+                <div class="row between">
+                  <!--  缺陷描述 -->
+                  <div class="flex1">
                     缺陷描述（
-                    <span class="reporter">张晋珲</span>
-                    24-07-19 08:50）：
+                    <span class="reporter">{{ item.reporterName }}</span>
+                    {{ item.reportTime }}）：
                   </div>
-                  <div class="flex1 text-right">
+                  <div class="text-right">
                     <el-button-group>
-                      <el-button size="small" type="success" round>复制</el-button>
-                      <el-button size="small" type="primary" round>翻译</el-button>
+                      <el-button
+                        size="small"
+                        type="success"
+                        round
+                        @click="handleCopy(item.defectFullDesc)"
+                        >复制</el-button
+                      >
+                      <el-button
+                        size="small"
+                        type="primary"
+                        round
+                        @click="translateTextFun(item)"
+                        >翻译</el-button
+                      >
                     </el-button-group>
                   </div>
                 </div>
 
                 <div class="defect-desc">
-                  客舱SA浴室控制组件格栅连接垫片缺失，数量：5EA
+                  {{ item.defectFullDesc }}
                 </div>
-                <div class="row translation-row">
+                <div class="row translation-row" v-if="item.translationResult">
                   <div class="label">翻译：</div>
                   <div class="translation-result">
-                    THE LOWER INSTALLATION SEAT OF THE FRONT DOOR FRAME OF DOOR NO. 5 ON
-                    THE LEFT IS DAMAGED, QUANTITY: 1EA
+                    &nbsp; {{ item.translationResult }}
                   </div>
                 </div>
 
-                <div class="more-info">
+                <div class="more-info" v-show="item.showMoreInfo">
                   <div class="row">
                     <div class="label">相关工卡：</div>
-                    <div class="value">N/A</div>
+                    <div class="value">{{ item.relatedCard }}</div>
                   </div>
                   <div class="row">
                     <div class="label">备注：</div>
-                    <div class="value">对应的安装螺丝加领15ea</div>
+                    <div class="value">{{ item.remark }}</div>
                   </div>
-                  <div class="row">
+                  <div class="row" v-if="item.pic">
                     <div class="label" style="display: flex; align-items: end">
                       相关图片：
                     </div>
                     <el-image
-                      style="width: 95px; height: 22px; border-radius: 4px"
+                      :preview-teleported="true"
                       :src="show_pic"
-                      :preview-src-list="[show_pic]"
+                      fit="cover"
+                      :preview-src-list="getPicList(item.pic)"
                     />
                     <span>（共2张）</span>
                   </div>
@@ -72,8 +85,22 @@
               </div>
               <div class="item-footer">
                 <div class="pointer show-info-btn">
-                  <el-button type="primary" text size="small">
-                    更多<el-icon><ArrowDown /></el-icon>
+                  <el-button
+                    @click="item.showMoreInfo = true"
+                    v-show="!item.showMoreInfo"
+                    type="primary"
+                    text
+                    size="small"
+                  >
+                    更多 &nbsp; <el-icon><ArrowDown /></el-icon>
+                  </el-button>
+                  <el-button
+                    @click="item.showMoreInfo = false"
+                    v-show="item.showMoreInfo"
+                    type="primary"
+                    text
+                    size="small"
+                    >收起 &nbsp; <el-icon><ArrowUp /></el-icon>
                   </el-button>
                 </div>
               </div>
@@ -84,23 +111,291 @@
       <footer>
         <div class="footer-container">
           <el-tag closable type="primary">Tag 1</el-tag>
+          <el-button class="filt-btn" @click="drawer = true" circle>
+            <el-icon><Search /></el-icon>
+          </el-button>
         </div>
       </footer>
     </div>
+
+    <!-- 抽屉 -->
+    <el-drawer
+      v-model="drawer"
+      :with-header="false"
+      :size="windowWidth >= 900 ? 500 : '100%'"
+    >
+      <div class="filter-content">
+        <el-form ref="formRef" :model="form" label-width="auto" :label-position="'top'">
+          <el-row>
+            <!-- 报告ID号 -->
+            <el-col :span="12">
+              <el-form-item label="报告ID号" prop="drid">
+                <el-input v-model="form.drid" clearable placeholder="多个ID用逗号隔开" />
+              </el-form-item>
+            </el-col>
+            <!-- 飞机号 -->
+            <el-col :span="12">
+              <el-form-item label="飞机号" prop="acNum">
+                <el-select
+                  v-model="form.acNum"
+                  allow-create
+                  filterable
+                  clearable
+                  placeholder="请选择飞机号"
+                >
+                  <el-option
+                    v-for="item in acNumOptions"
+                    :key="item.id"
+                    :label="item.lineValue"
+                    :value="item.lineValue"
+                  />
+                </el-select>
+              </el-form-item>
+            </el-col>
+          </el-row>
+          <el-row>
+            <!-- 缺陷描述 -->
+            <el-col :span="24">
+              <el-form-item label="缺陷描述" prop="dftdsc">
+                <el-input v-model="form.dftdsc" clearable placeholder="缺陷描述" />
+              </el-form-item>
+            </el-col>
+          </el-row>
+          <el-row>
+            <!-- 提交人姓名 -->
+            <el-col :span="12">
+              <el-form-item label="提交人：姓名" prop="rptrna">
+                <el-input v-model="form.rptrna" clearable placeholder="提交人姓名" />
+              </el-form-item>
+            </el-col>
+            <!-- 提交人员工号 -->
+            <el-col :span="12">
+              <el-form-item label="或员工号" prop="rptrnu">
+                <el-input v-model="form.rptrnu" clearable placeholder="提交人员工号" />
+              </el-form-item>
+            </el-col>
+          </el-row>
+          <el-row>
+            <!-- 处理人姓名 -->
+            <el-col :span="12">
+              <el-form-item label="处理人：姓名" prop="prorna">
+                <el-input v-model="form.prorna" clearable placeholder="处理人姓名" />
+              </el-form-item>
+            </el-col>
+            <!-- 提交人员工号 -->
+            <el-col :span="12">
+              <el-form-item label="或员工号" prop="prornu">
+                <el-input v-model="form.prornu" clearable placeholder="处理人员工号" />
+              </el-form-item>
+            </el-col>
+          </el-row>
+          <el-row>
+            <!-- 状态 -->
+            <el-col :span="24">
+              <el-form-item label="报告状态">
+                <el-checkbox v-model="form.pending" label="待处理" size="small" />
+                <el-checkbox v-model="form.temppro" label="暂存" size="small" />
+                <el-checkbox v-model="form.proing" label="处理中" size="small" />
+                <el-checkbox v-model="form.proed" label="已处理" size="small" />
+              </el-form-item>
+            </el-col>
+          </el-row>
+          <el-row>
+            <!-- 报告提交时间起始 -->
+            <el-col :span="12">
+              <el-form-item label="提交时间：从" prop="periodFrom">
+                <el-date-picker
+                  v-model="form.periodFrom"
+                  type="date"
+                  placeholder="选择日期"
+                  size="small"
+                />
+              </el-form-item>
+            </el-col>
+            <!-- 报告提交时间结束 -->
+            <el-col :span="12">
+              <el-form-item label="至" prop="periodTo">
+                <el-date-picker
+                  v-model="form.periodTo"
+                  type="date"
+                  placeholder="选择日期"
+                  size="small"
+                />
+              </el-form-item>
+            </el-col>
+          </el-row>
+          <el-row>
+            <!-- 不限时间 -->
+            <el-col :span="24">
+              <el-checkbox
+                v-model="form.ds"
+                label="不限时间（默认只显示近30天的报告）"
+                size="small"
+              />
+            </el-col>
+          </el-row>
+          <el-row>
+            <!-- 航材件号 -->
+            <el-col :span="24">
+              <el-form-item label="航材件号" prop="partNo">
+                <el-input v-model="form.partNo" clearable placeholder="航材件号" />
+              </el-form-item>
+            </el-col>
+          </el-row>
+          <el-row>
+            <!-- 参考资料 -->
+            <el-col :span="24">
+              <el-form-item label="参考资料" prop="refTo">
+                <el-input v-model="form.refTo" clearable placeholder="参考资料" />
+              </el-form-item>
+            </el-col>
+          </el-row>
+          <el-row>
+            <!-- 开卡卡号 -->
+            <el-col :span="12">
+              <el-form-item label="开卡卡号" prop="cardNum">
+                <el-input v-model="form.cardNum" clearable placeholder="开卡卡号" />
+              </el-form-item>
+            </el-col>
+            <!-- 有图片 -->
+            <el-col :span="12">
+              <el-form-item label="其他条件" prop="pic">
+                <el-checkbox v-model="form.pic" label="有图片" size="small" />
+              </el-form-item>
+            </el-col>
+          </el-row>
+        </el-form>
+        <div class="filter-footer">
+          <el-button @click="drawer = false">取消</el-button>
+          <el-button type="info" @click="resetForm(formRef)">清空</el-button>
+          <el-button type="primary" @click="getDrList()">确定</el-button>
+        </div>
+      </div>
+    </el-drawer>
   </div>
 </template>
-
 <script setup>
-import Header from '@/components/Header.vue'
+import { onMounted, onUnmounted, reactive, ref } from "vue";
+import Header from "@/components/Header.vue";
+import { drListAPI, drDownAPI } from "@/apis/index";
 import { useUserStore } from "@/stores/userStore";
 import { useRouter } from "vue-router";
-
+import { ElMessage } from "element-plus";
+import { translateText, getPicList } from "@/utils/function";
+import clipBoard from "vue-clipboard3";
+let { toClipboard } = clipBoard(); // 一键复制
 import show_pic from "@/assets/images/show_pic.jpg";
 
 const userStore = useUserStore();
 const router = useRouter();
+const drawer = ref(false); // 抽屉
 
+let acNumOptions = ref([]); // 飞机号列表
 
+// 表单
+const formRef = ref();
+const form = reactive({
+  drid: "", // 报告id
+  ac: "", // 飞机号
+  dftdsc: "", // 缺陷描述
+  rptrna: "", // 报告人姓名
+  rptrnu: "", // 报告人员工号
+  prorna: "", // 处理人姓名
+  prornu: "", // 处理人员工号
+  pending: "", // 报告状态 待处理
+  temppro: "", // 报告状态 暂存
+  proing: "", // 报告状态 处理中
+  proed: "", // 报告状态 已处理
+  draft: "", // 报告状态 草稿
+  periodFrom: "", // 报告提交时间起始
+  periodTo: "", // 报告提交时间结束
+  ds: "", // 不限时间
+  partNo: "", // 航材件号
+  refTo: "", // 参考资料
+  cardNum: "", // 开卡卡号
+  pic: "", // 有图片
+});
+
+// 重置表单
+const resetForm = (formEl) => {
+  if (!formEl) {
+    return;
+  }
+  formEl.resetFields();
+  form.pending = "";
+  form.temppro = "";
+  form.proing = "";
+  form.proed = "";
+  form.ds = "";
+};
+
+// 获取报告列表
+let drList = ref([]);
+const getDrList = async () => {
+  let page = { ...form };
+  page.user = userStore.userInfo.user;
+  page.role = userStore.userInfo.role;
+  const res = await drListAPI(page);
+  drList.value = res.result;
+
+  if (drawer.value) {
+    drawer.value = false;
+  }
+};
+getDrList();
+
+// 复制缺陷描述
+const handleCopy = async (text) => {
+  try {
+    await toClipboard(text);
+    ElMessage({
+      message: "复制成功",
+      type: "success",
+    });
+  } catch (e) {
+    ElMessage({
+      message: e,
+      type: "error",
+    });
+  }
+};
+
+// 翻译
+const translateTextFun = async (item) => {
+  const res = await translateText(item.defectFullDesc);
+  item.translationResult = res;
+};
+
+const windowWidth = ref(0);
+
+onMounted(() => {
+  // 获取窗口宽度
+  windowWidth.value = window.innerWidth;
+
+  // 添加事件监听，监听窗口大小变化
+  window.addEventListener("resize", updateWindowWidth);
+});
+
+// 组件销毁前移除事件监听
+onUnmounted(() => {
+  window.removeEventListener("resize", updateWindowWidth);
+});
+
+function updateWindowWidth() {
+  windowWidth.value = window.innerWidth;
+}
+
+// 接收飞机号列表数据
+const handleInitData = (drInitData) => {
+  acNumOptions.value = drInitData.lines;
+};
+// 下载
+const handleDownload = async () => {
+  let page = { ...form };
+  page.user = userStore.userInfo.user;
+  page.role = userStore.userInfo.role;
+  const res = await drDownAPI(page);
+};
 </script>
 
 <style scoped lang="scss">
@@ -119,7 +414,6 @@ const router = useRouter();
     width: 900px;
     position: relative;
   }
- 
 
   main {
     background-color: hsla(0, 0%, 100%, 0.17);
@@ -137,7 +431,7 @@ const router = useRouter();
         .item-box {
           background-color: rgba(255, 255, 255, 1);
           box-shadow: 1px 1px 4px 1px rgba(0, 0, 0, 0.2);
-        //   background-color: hsla(0, 0%, 100%, 0.4);
+          //   background-color: hsla(0, 0%, 100%, 0.4);
           margin-bottom: 20px;
           -webkit-backdrop-filter: blur(8px);
           backdrop-filter: blur(8px);
@@ -173,6 +467,11 @@ const router = useRouter();
           .item-content {
             padding: 2px 8px;
 
+            .between {
+              display: flex;
+              justify-content: space-between;
+            }
+
             .label {
               white-space: nowrap;
             }
@@ -183,6 +482,10 @@ const router = useRouter();
               .reporter {
                 cursor: pointer;
               }
+            }
+
+            .el-button-group {
+              display: flex;
             }
 
             .defect-desc {
@@ -223,7 +526,7 @@ const router = useRouter();
 
           .item-footer {
             border-top: 1px solid rgba(0, 0, 0, 0.08);
-            padding: 2px 8px;
+            padding: 2px 0;
             display: flex;
             line-height: 24px;
 
@@ -231,6 +534,10 @@ const router = useRouter();
               display: flex;
               align-items: end;
               color: #444 !important;
+
+              button {
+                margin: 0;
+              }
             }
           }
         }
@@ -271,10 +578,45 @@ footer {
     width: 900px;
     height: 32px;
     background-color: rgb(198, 226, 255);
-    overflow: hidden;
+    // overflow: hidden;
     display: flex;
     align-items: center;
     padding: 0 10px;
+    position: relative;
+
+    .filt-btn {
+      position: absolute;
+      top: -12px;
+      right: 0;
+      z-index: 10;
+    }
+  }
+}
+
+.filter-content {
+  // padding: 10px;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  // height: 100vh;
+  // overflow: auto;
+
+  .el-form {
+    flex: 1;
+
+    .el-row {
+      margin: 0;
+      .el-col {
+        padding: 0 5px;
+      }
+    }
+  }
+
+  .filter-footer {
+    width: 70%;
+    margin: auto;
+    display: flex;
+    justify-content: space-around;
   }
 }
 
@@ -290,6 +632,15 @@ footer {
 }
 .pointer {
   cursor: pointer;
+}
+
+:deep().el-drawer__body {
+  padding: 10px !important;
+}
+
+:deep().el-form-item {
+  color: #606266;
+  margin-bottom: 6px;
 }
 
 @media (max-width: 900px) {

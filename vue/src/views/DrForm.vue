@@ -1,7 +1,7 @@
 <template>
   <div class="body">
     <div class="container">
-      <Header />
+      <Header @initData="handleInitData" />
       <main>
         <div class="main">
           <el-form
@@ -16,14 +16,16 @@
               <el-col :span="10"><span class="title">飞机缺陷报告</span></el-col>
               <!-- 完整缺陷 选择框 -->
               <el-col :span="14" class="isFull">
-                <el-checkbox v-model="isFull" label="完整缺陷描述方式填写" />
+                <el-checkbox v-model="ruleForm.isFullDesc" label="完整缺陷描述方式填写" />
               </el-col>
             </el-row>
             <el-row>
               <!-- 飞机号 -->
               <el-col :span="12">
                 <el-form-item class="acNum-form" label="飞机号" required prop="acNum">
-                  <div class="qtn" v-show="ruleForm.quarterNode">1/4节点: {{ ruleForm.quarterNode }}</div>
+                  <div class="qtn" v-show="ruleForm.quarterNode">
+                    1/4节点: {{ ruleForm.quarterNode }}
+                  </div>
                   <el-select
                     v-model="ruleForm.acNum"
                     @change="acNumChange"
@@ -32,7 +34,12 @@
                     clearable
                     placeholder="请选择飞机号"
                   >
-                    <el-option v-for="item in acNumOptions" :key="item.id" :label="item.lineValue" :value="item.lineValue" />
+                    <el-option
+                      v-for="item in acNumOptions"
+                      :key="item.id"
+                      :label="item.lineValue"
+                      :value="item.lineValue"
+                    />
                   </el-select>
                 </el-form-item>
               </el-col>
@@ -256,11 +263,21 @@
             <el-row>
               <el-col :span="24">
                 <div class="button-group">
-                  <el-button size="small" type="primary" @click="submitForm(ruleFormRef)"
+                  <el-button
+                    size="small"
+                    type="primary"
+                    @click="submitForm(ruleFormRef, '待处理')"
                     >提交</el-button
                   >
-                  <el-button size="small" type="success" @click="saveDraft()">保存草稿</el-button>
-                  <el-button size="small" type="warning" @click="resetForm(ruleFormRef)">重置</el-button>
+                  <el-button
+                    size="small"
+                    type="success"
+                    @click="submitForm(ruleFormRef, '草稿')"
+                    >保存草稿</el-button
+                  >
+                  <el-button size="small" type="warning" @click="resetForm(ruleFormRef)"
+                    >重置</el-button
+                  >
                 </div>
               </el-col>
             </el-row>
@@ -268,7 +285,7 @@
         </div>
       </main>
       <footer>
-        <div class="fullDescBox">完整描述：，数量：1EA</div>
+        <div class="fullDescBox">完整描述：{{ getFullDesc() }}</div>
       </footer>
     </div>
   </div>
@@ -286,28 +303,27 @@ import {
   defectDescOptions,
   suggestionOptions,
 } from "@/data/data.ts";
-import { picUploadAPI } from "@/apis/user";
+import { picUploadAPI, drFormAPI } from "@/apis/index";
+import { getTimeStr } from "@/utils/function";
 
 const userStore = useUserStore();
 const router = useRouter();
-const isFull = ref(false); // 是否选择完整缺陷描述方式填写
 
-const acNumOptions = userStore.userInfo.lines // 飞机号列表
-console.log(acNumOptions);
+const acNumOptions = ref([]); // 飞机号列表
 // 飞机号改变
 const acNumChange = (value) => {
-  if(value){
-    let item = acNumOptions.find((item) => item.lineValue === value)
-    if(item){
-      ruleForm.quarterNode = item.lineQtn
+  if (value) {
+    let item = acNumOptions.value.find((item) => item.lineValue === value);
+    if (item) {
+      ruleForm.quarterNode = item.lineQtn;
     }
   }
-}
-
+};
 
 // 表单属性
 const ruleFormRef = ref();
 const ruleForm = reactive({
+  isFullDesc: false, // 完整缺陷描述方式填写
   acNum: "", // 飞机号
   quarterNode: "", // 1/4节点
   relatedCard: "", // 相关工卡
@@ -362,38 +378,59 @@ const deletePic = (index) => {
   srcList.value.splice(index, 1);
 };
 // 提交图片 弃用
-// const submitPics = async () => {
-//   let user = userStore.userInfo.user;
-//   let pics = srcList.value;
-//   const res = await picUploadAPI({ user, pics });
-// };
-
-// 提交表单
-const submitForm = async (formEl) => {
-  if (!formEl) return;
-  await formEl.validate((valid, fields) => {
-    if (valid) {
-      console.log("submit!");
-    } else {
-      ElMessage.warning("请检查表单信息");
-      return false;
-    }
-  });
+const submitPics = async () => {
+  let user = userStore.userInfo.user;
+  let pics = srcList.value;
+  const res = await picUploadAPI({ user, pics });
 };
 
-// 保存草稿
-const saveDraft= ()=>{
-  if(!ruleForm.acNum){
-    ElMessage.warning("请选择飞机号");
-    return false;
+// 提交表单或者保存草稿
+const submitForm = async (formEl, status) => {
+  if (!formEl) return;
+  if (status == "待处理") {
+    await formEl.validate(async (valid, fields) => {
+      if (!valid) {
+        ElMessage.warning("请检查表单信息");
+        return false;
+      }
+    });
+  } else if (status == "草稿") {
+    if (!ruleForm.acNum) {
+      ElMessage.warning("请选择飞机号");
+      return false;
+    }
   }
-}
+  let form = { ...ruleForm };
+  form.reporterName = userStore.userInfo.name; // 报告人
+  form.reporterNum = userStore.userInfo.user; // 报告人工号
+  form.reportTime = getTimeStr(new Date(), false); // 报告时间
+  form.status = status; // 状态
+  form.pics = srcList.value; // 图片
+  form.defectFullDesc = getFullDesc(); // 完整描述
+  const res = await drFormAPI(form);
+  if (res.success) {
+    ElMessage.success("提交成功");
+    resetForm(ruleFormRef.value);
+    srcList.value = [];
+  } else {
+    ElMessage.error("提交失败");
+  }
+};
 
 // 重置表单
 const resetForm = (formEl) => {
-  if (!formEl) return
-  formEl.resetFields()
-}
+  if (!formEl) return;
+  formEl.resetFields();
+};
+
+// 完整描述：
+const getFullDesc = () => {
+  return `${ruleForm.acNum}${ruleForm.mainZone}${ruleForm.subZone}${ruleForm.mainPart}${ruleForm.subPart}${ruleForm.defectDesc}，数量：${ruleForm.partQty} ${ruleForm.partUnit}`;
+};
+
+const handleInitData = (drInitData) => {
+  acNumOptions.value = drInitData.lines;
+};
 </script>
 
 <style scoped lang="scss">
@@ -437,9 +474,6 @@ const resetForm = (formEl) => {
           margin: 0;
           .el-col {
             padding: 0 5px;
-            .el-form-item {
-              // margin-bottom: 6px !important;
-            }
           }
         }
         .from-title {
@@ -490,6 +524,21 @@ const resetForm = (formEl) => {
                 height: 100%;
               }
             }
+          }
+          #imgIcon {
+            width: 70px;
+            height: 70px;
+            display: inline-block;
+            text-align: center;
+            background: url(../img/photo_icon.e8bedd7b.jpg) no-repeat 50%;
+            opacity: 0.7;
+            padding-top: 4px;
+            box-sizing: border-box;
+            border: 1px solid #ddd;
+            font-size: 10px;
+            line-height: 16px;
+            text-shadow: 1px 1px 1px hsla(0, 0%, 100%, 0.8);
+            vertical-align: top;
           }
           .picUploadBtnBox {
             text-align: center;

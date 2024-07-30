@@ -11,7 +11,7 @@
  Target Server Version : 50617
  File Encoding         : 65001
 
- Date: 23/07/2024 17:31:12
+ Date: 30/07/2024 16:34:52
 */
 
 SET NAMES utf8mb4;
@@ -51,7 +51,7 @@ CREATE TABLE `tb_dr`  (
   `reporterNum` varchar(255) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL COMMENT '报告人工号',
   `reviseTime` datetime NULL DEFAULT NULL COMMENT '修改时间',
   `reviser` varchar(255) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL COMMENT '修改人',
-  `status` varchar(255) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL COMMENT '状态：待处理、暂存、处理中、已处理、草稿、已删除',
+  `status` varchar(255) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL COMMENT '状态：待处理、草稿、处理中、已处理、草稿、已删除',
   `subPart` varchar(255) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL COMMENT '子部件',
   `subZone` varchar(255) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL COMMENT '子区域',
   `suggestion` varchar(255) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL COMMENT '建议处理方案',
@@ -62,11 +62,15 @@ CREATE TABLE `tb_dr`  (
   `wipNum` varchar(255) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL COMMENT 'WIP号',
   `withDraw` varchar(255) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL,
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8 COLLATE = utf8_general_ci ROW_FORMAT = Compact;
+) ENGINE = InnoDB AUTO_INCREMENT = 9 CHARACTER SET = utf8 COLLATE = utf8_general_ci ROW_FORMAT = Compact;
 
 -- ----------------------------
 -- Records of tb_dr
 -- ----------------------------
+INSERT INTO `tb_dr` VALUES (5, 'B-223G', NULL, '表面划伤', 'B-223G客舱1号门厨房工作台表面划伤，数量 1EA', NULL, NULL, '0', '厨房', '客舱', NULL, '123', '门上方', NULL, 1, 'EA', '/public/upload_pic/202407/000000_20240728163810592.jpg|/public/upload_pic/202407/000000_20240728163810597.jpg', NULL, NULL, '2024-07-19 12:00', NULL, 'A_12', '测试备注', NULL, '2024-07-28 16:38:10', '测试', '000000', NULL, NULL, '待处理', '工作台', '1号门', '在位修理', NULL, NULL, NULL, NULL, '321', NULL);
+INSERT INTO `tb_dr` VALUES (6, 'N109FE', NULL, '', 'N109FE，数量： EA', NULL, NULL, '0', '', '', NULL, '', '', NULL, 0, 'EA', '', NULL, NULL, '2024-07-19 12:00', NULL, '', '', NULL, '2024-07-28 22:13:34', '测试', '000000', NULL, NULL, '草稿', '', '', '', NULL, NULL, NULL, NULL, '', NULL);
+INSERT INTO `tb_dr` VALUES (7, 'A6-EDV', NULL, '表面划伤', 'A6-EDV表面划伤，数量： EA', NULL, NULL, '0', '', '', NULL, '', '', NULL, 0, 'EA', '', NULL, NULL, '2024-08-05 12:00', NULL, '1212', '', NULL, '2024-07-28 22:14:10', '测试', '000000', NULL, NULL, '草稿', '', '', '', NULL, NULL, NULL, NULL, '', NULL);
+INSERT INTO `tb_dr` VALUES (8, 'A6-EDV', NULL, '有凹坑', 'A6-EDV有凹坑，数量： EA', NULL, NULL, '0', '', '', NULL, '', '', NULL, 0, 'EA', '', NULL, NULL, '2024-08-05 12:00', NULL, '3131', '', NULL, '2024-07-28 22:14:32', '测试', '000000', NULL, NULL, '待处理', '', '', '', NULL, NULL, NULL, NULL, '', NULL);
 
 -- ----------------------------
 -- Table structure for tb_lines
@@ -83,8 +87,8 @@ CREATE TABLE `tb_lines`  (
 -- Records of tb_lines
 -- ----------------------------
 INSERT INTO `tb_lines` VALUES (1, '2024-07-19 12:00', 'B-223G');
-INSERT INTO `tb_lines` VALUES (2, '2024-08-05 12:0', 'A6-EDV');
-INSERT INTO `tb_lines` VALUES (3, '2024-07-19 12:0', 'N109FE');
+INSERT INTO `tb_lines` VALUES (2, '2024-08-05 12:00', 'A6-EDV');
+INSERT INTO `tb_lines` VALUES (3, '2024-07-19 12:00', 'N109FE');
 
 -- ----------------------------
 -- Table structure for tb_user
@@ -123,7 +127,7 @@ CREATE TABLE `tb_user_lines`  (
 -- Records of tb_user_lines
 -- ----------------------------
 INSERT INTO `tb_user_lines` VALUES (1, 1, '2024-07-19 12:00', 'B-223G', 1, '000000');
-INSERT INTO `tb_user_lines` VALUES (2, 2, '2024-08-05 12:0', 'A6-EDV', 1, '000000');
-INSERT INTO `tb_user_lines` VALUES (3, 3, '2024-07-19 12:0', 'N109FE', 1, '000000');
+INSERT INTO `tb_user_lines` VALUES (2, 2, '2024-08-05 12:00', 'A6-EDV', 1, '000000');
+INSERT INTO `tb_user_lines` VALUES (3, 3, '2024-07-19 12:00', 'N109FE', 1, '000000');
 
 SET FOREIGN_KEY_CHECKS = 1;
