@@ -1,7 +1,7 @@
 <template>
   <div class="login">
     <div class="container">
-      <h1>请登录</h1>
+      <h1>博强飞行</h1>
       <el-form
         ref="formRef"
         :model="form"

@@ -1,7 +1,7 @@
 <template>
   <div class="body">
     <div class="container">
-      <Header @initData="handleInitData" />
+      <Header page="drForm" @initData="handleInitData" />
       <main>
         <div class="main">
           <el-form

@@ -22,9 +22,21 @@ if (!userStore.userInfo.user) {
     router.push("/login");
   }, 1000);
 }
-const goDrList = ()=>{
-  window.open('/drlist', '_blank')
-}
+const goDrList = () => {
+  if (userStore.userInfo.user) {
+    if (userStore.userInfo.role.indexOf('管理员') != -1) {
+      router.push("/drlist"); // 管理员
+    } else {
+      router.push("/drform"); // 普通员工
+    }
+  } else {
+    ElMessage.info("用户未登录，跳转到登录页");
+    setTimeout(() => {
+      router.push("/login");
+    }, 1000);
+  }
+  // window.open('/drlist', '_blank')
+};
 </script>
 
 <style scoped lang="scss">

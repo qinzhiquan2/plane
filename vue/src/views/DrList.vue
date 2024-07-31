@@ -1,7 +1,7 @@
 <template>
   <div class="body">
     <div class="container">
-      <Header @initData="handleInitData" @download="handleDownload" />
+      <Header page="drList" @initData="handleInitData" @download="handleDownload" />
       <main>
         <div class="dr-list">
           <div class="main">
@@ -18,7 +18,7 @@
                   <div class="qtr-node">
                     <span>1/4节点：{{ item.quarterNode }}</span>
                   </div>
-                  <div class="item-id">1/1437# (ID:16945)</div>
+                  <div class="item-id">1/1437# (ID : {{ item.id }})</div>
                 </div>
               </div>
               <div class="item-content">
@@ -193,8 +193,8 @@
             <!-- 状态 -->
             <el-col :span="24">
               <el-form-item label="报告状态">
-                <el-checkbox v-model="form.pending" label="待处理" size="small" />
-                <el-checkbox v-model="form.temppro" label="暂存" size="small" />
+                <el-checkbox v-model="form.pending" :true-value="1" :false-value="0" label="待处理" size="small" />
+                <el-checkbox v-model="form.temppro" label="草稿" size="small" />
                 <el-checkbox v-model="form.proing" label="处理中" size="small" />
                 <el-checkbox v-model="form.proed" label="已处理" size="small" />
               </el-form-item>
@@ -281,7 +281,7 @@ import { drListAPI, drDownAPI } from "@/apis/index";
 import { useUserStore } from "@/stores/userStore";
 import { useRouter } from "vue-router";
 import { ElMessage } from "element-plus";
-import { translateText, getPicList } from "@/utils/function";
+import { translateText, getPicList, downloadExcel, getTimeStr } from "@/utils/function";
 import clipBoard from "vue-clipboard3";
 let { toClipboard } = clipBoard(); // 一键复制
 import show_pic from "@/assets/images/show_pic.jpg";
@@ -303,7 +303,7 @@ const form = reactive({
   prorna: "", // 处理人姓名
   prornu: "", // 处理人员工号
   pending: "", // 报告状态 待处理
-  temppro: "", // 报告状态 暂存
+  temppro: "", // 报告状态 草稿
   proing: "", // 报告状态 处理中
   proed: "", // 报告状态 已处理
   draft: "", // 报告状态 草稿
@@ -395,6 +395,9 @@ const handleDownload = async () => {
   page.user = userStore.userInfo.user;
   page.role = userStore.userInfo.role;
   const res = await drDownAPI(page);
+  console.log(res)
+  // 调用函数处理并下载  
+  downloadExcel(res.result.url, res.result.fileName); 
 };
 </script>
 

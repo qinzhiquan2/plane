@@ -2,6 +2,7 @@
 import axios from 'axios'
 import { ElMessage } from 'element-plus'
 import { useUserStore } from '@/stores/userStore'
+import { removeEmptyStrings } from "@/utils/function";
 const httpInstance = axios.create({
   baseURL: 'http://localhost:3000/',
   timeout: 5000
@@ -18,8 +19,15 @@ httpInstance.interceptors.request.use(config => {
   if (token) {
     config.headers.Authorization = `Bearer ${token}`
   }
+
+  if(config.params){
+    config.params = removeEmptyStrings(config.params)
+  }
+  if(config.data){
+    config.data = removeEmptyStrings(config.params)
+  }
   return config
-}, e => Promise.reject(e))
+ }, e => Promise.reject(e))
 
 // axios响应式拦截器
 httpInstance.interceptors.response.use(res => {
