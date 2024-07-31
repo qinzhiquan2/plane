@@ -4,7 +4,7 @@
   "description": "is node demo",
   "main": "app.js",
   "scripts": {
-    "dev": "cross-env NODE_ENV=development nodemon app.js --watch server --exec babel-node",
+    "dev": "nodemon --exec babel-node app.js",
     "build": "nuxt build",
     "start": "cross-env NODE_ENV=production node app.js --exec babel-node",
     "generate": "nuxt generate"

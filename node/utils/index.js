@@ -131,70 +131,78 @@ const getYearAndMonth = (time = new Date()) => { return new Date(time).getFullYe
 
 // 获取缺陷报告列表的sql
 function getDrListSql(query, isDownload = false) {
-    let { user, drid, ac, dftdsc, rptrna, rptrnu, prorna, prornu, pending, temppro, proing, proed, periodFrom, periodTo, ds, partNo, refTo, cardNum, pic, p } = query
+    let { user,reporterNum, processorNum, drid, ac, dftdsc, rptrna, rptrnu, prorna, prornu, pending, temppro, proing, proed,draft, periodFrom, periodTo, ds, partNo, refTo, cardNum, pic, p } = query
     p = p || 1
     let start = (p - 1) * 100, end = p * 100
     let sqlStr = ''
 
-    if (temppro) {
-        sqlStr = `SELECT * FROM tb_dr WHERE status = '草稿' and reporterName = ${user}`
-    } else {
-        sqlStr = `SELECT * FROM tb_dr WHERE status<>'草稿'`
-        // 报告id
-        if (drid) {
-            drid = drid.replace(/\，/g, ',')
-            sqlStr += ` and id in (${drid})`
-        }
+    sqlStr = `SELECT * FROM tb_dr WHERE 1 = 1 `
 
-        // 飞机号
-        if (ac) sqlStr += ` and acNum like '%${ac}%'`
 
-        // 缺陷描述
-        if (dftdsc) sqlStr += ` and defectFullDesc like '%${dftdsc}%'`
 
-        // 报告人姓名
-        if (rptrna) sqlStr += ` and reporterName like '%${rptrna}%'`
-
-        // 报告人员工号
-        if (rptrnu) sqlStr += ` and reporterNum like '%${rptrnu}%'`
-
-        // 处理人姓名
-        if (prorna) sqlStr += ` and processorName like '%${prorna}%'`
-
-        // 处理人员工号
-        if (prornu) sqlStr += ` and processorNum like '%${prornu}%'`
-
-        // 报告状态
-        let status = ''
-        if (pending) status += `'待处理',`
-        if (temppro) status += `'草稿',`
-        if (proing) status += `'处理中',`
-        if (proed) status += `'已处理',`
-        if (status) sqlStr += ` and status in (${status.slice(0, -1)})`
-
-        // 报告提交时间起始
-        if (periodFrom) sqlStr += ` and reportTime >= '${periodFrom}'`
-        // 报告提交时间结束
-        if (periodTo) sqlStr += ` and reportTime <= '${periodTo}'`
-
-        // 不限时间
-        if (ds) {
-            sqlStr += ` and reportTime >= '2023-01-01'`
-        } else if (!periodFrom && !periodTo) {
-            sqlStr += ` and reportTime >= '${getThirtyDaysAgo()}'`
-        }
-
-        // 航材件号
-        if (partNo) sqlStr += ` and partNo like '%${partNo}%'`
-
-        // 参考资料
-        if (refTo) sqlStr += ` and referTo like '%${refTo}%'`
-
-        // 开卡卡号
-        if (cardNum) sqlStr += ` and cardNum like '%${cardNum}%'`
-        // 有图片
-        if (pic) sqlStr += ` and pics is not null and pics<>''`
+    // 报告人员工号
+    if (reporterNum) {
+        sqlStr += ` and reporterNum = ${reporterNum}`
     }
+    // 报告人员工号
+    if (processorNum) {
+        sqlStr += ` and processorNum = ${processorNum}`
+    }
+
+    // 报告id 
+    if (drid) {
+        drid = drid.replace(/\，/g, ',')
+        sqlStr += ` and id in (${drid})`
+    }
+
+    // 飞机号
+    if (ac) sqlStr += ` and acNum like '%${ac}%'`
+
+    // 缺陷描述
+    if (dftdsc) sqlStr += ` and defectFullDesc like '%${dftdsc}%'`
+
+    // 报告人姓名
+    if (rptrna) sqlStr += ` and reporterName like '%${rptrna}%'`
+
+    // 报告人员工号
+    if (rptrnu) sqlStr += ` and reporterNum like '%${rptrnu}%'`
+
+    // 处理人姓名
+    if (prorna) sqlStr += ` and processorName like '%${prorna}%'`
+
+    // 处理人员工号
+    if (prornu) sqlStr += ` and processorNum like '%${prornu}%'`
+
+    // 报告状态
+    let status = ''
+    if (pending) status += `'待处理',`
+    if (draft) status += `'草稿',`
+    if (proing) status += `'处理中',`
+    if (proed) status += `'已处理',`
+    if (status) sqlStr += ` and status in (${status.slice(0, -1)})`
+
+    // 报告提交时间起始
+    if (periodFrom) sqlStr += ` and reportTime >= '${periodFrom}'`
+    // 报告提交时间结束
+    if (periodTo) sqlStr += ` and reportTime <= '${periodTo}'`
+
+    // 不限时间
+    if (ds) {
+        sqlStr += ` and reportTime >= '2023-01-01'`
+    } else if (!periodFrom && !periodTo) {
+        sqlStr += ` and reportTime >= '${getThirtyDaysAgo()}'`
+    }
+
+    // 航材件号
+    if (partNo) sqlStr += ` and partNo like '%${partNo}%'`
+
+    // 参考资料
+    if (refTo) sqlStr += ` and referTo like '%${refTo}%'`
+
+    // 开卡卡号
+    if (cardNum) sqlStr += ` and cardNum like '%${cardNum}%'`
+    // 有图片
+    if (pic) sqlStr += ` and pics is not null and pics<>''`
     // 分页
     if (!isDownload) {
         sqlStr += ` order by reportTime desc limit ${start}, ${end}`

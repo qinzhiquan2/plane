@@ -7,7 +7,7 @@ const ExcelJS = require('exceljs');
 const utils = require('../utils');
 const jwt = require('jsonwebtoken');
 
-const secret = 'plane'; // 密钥  
+const secret = 'plane'; // 密钥 
 // 验证token中间件
 function jwtAuth(req, res, next) {
   // 从请求头中获取token  
@@ -94,6 +94,7 @@ router.get('/dr_list', jwtAuth, async (req, res) => {
       res.status(500).send({
         success: false,
         msg: '获取缺陷报告列表失败',
+        sql: sqlStr,
         err
       })
     } else {

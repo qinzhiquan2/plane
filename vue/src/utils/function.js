@@ -88,7 +88,7 @@ export function downloadExcel(url, fileName = getTimeStr()) {
     document.body.removeChild(a);
 }
 
-export function removeEmptyStrings(obj) {  
+export function removeEmptyStrings(obj) { 
     for (const key in obj) {  
       if (obj.hasOwnProperty(key) && obj[key] === '') {  
         delete obj[key];  

@@ -1,7 +1,7 @@
 <template>
   <div class="body">
     <div class="container">
-      <Header page="drList" @initData="handleInitData" @download="handleDownload" />
+      <Header page="drList" @initData="handleInitData" @download="handleDownload" @filterDrList="handleFilterDrList" />
       <main>
         <div class="dr-list">
           <div class="main">
@@ -10,7 +10,9 @@
                 <div class="title">
                   <div class="ac-no">{{ item.acNum }}</div>
                   <div class="status red">
-                    <el-icon><Flag /></el-icon>
+                    <el-icon>
+                      <Flag />
+                    </el-icon>
                     {{ item.status }}
                   </div>
                 </div>
@@ -31,20 +33,9 @@
                   </div>
                   <div class="text-right">
                     <el-button-group>
-                      <el-button
-                        size="small"
-                        type="success"
-                        round
-                        @click="handleCopy(item.defectFullDesc)"
-                        >复制</el-button
-                      >
-                      <el-button
-                        size="small"
-                        type="primary"
-                        round
-                        @click="translateTextFun(item)"
-                        >翻译</el-button
-                      >
+                      <el-button size="small" type="success" round
+                        @click="handleCopy(item.defectFullDesc)">复制</el-button>
+                      <el-button size="small" type="primary" round @click="translateTextFun(item)">翻译</el-button>
                     </el-button-group>
                   </div>
                 </div>
@@ -72,12 +63,8 @@
                     <div class="label" style="display: flex; align-items: end">
                       相关图片：
                     </div>
-                    <el-image
-                      :preview-teleported="true"
-                      :src="show_pic"
-                      fit="cover"
-                      :preview-src-list="getPicList(item.pic)"
-                    />
+                    <el-image :preview-teleported="true" :src="show_pic" fit="cover"
+                      :preview-src-list="getPicList(item.pic)" />
                     <span>（共2张）</span>
                   </div>
                   <div class="gtp-info"></div>
@@ -85,22 +72,16 @@
               </div>
               <div class="item-footer">
                 <div class="pointer show-info-btn">
-                  <el-button
-                    @click="item.showMoreInfo = true"
-                    v-show="!item.showMoreInfo"
-                    type="primary"
-                    text
-                    size="small"
-                  >
-                    更多 &nbsp; <el-icon><ArrowDown /></el-icon>
+                  <el-button @click="item.showMoreInfo = true" v-show="!item.showMoreInfo" type="primary" text
+                    size="small">
+                    更多 &nbsp; <el-icon>
+                      <ArrowDown />
+                    </el-icon>
                   </el-button>
-                  <el-button
-                    @click="item.showMoreInfo = false"
-                    v-show="item.showMoreInfo"
-                    type="primary"
-                    text
-                    size="small"
-                    >收起 &nbsp; <el-icon><ArrowUp /></el-icon>
+                  <el-button @click="item.showMoreInfo = false" v-show="item.showMoreInfo" type="primary" text
+                    size="small">收起 &nbsp; <el-icon>
+                      <ArrowUp />
+                    </el-icon>
                   </el-button>
                 </div>
               </div>
@@ -112,18 +93,16 @@
         <div class="footer-container">
           <el-tag closable type="primary">Tag 1</el-tag>
           <el-button class="filt-btn" @click="drawer = true" circle>
-            <el-icon><Search /></el-icon>
+            <el-icon>
+              <Search />
+            </el-icon>
           </el-button>
         </div>
       </footer>
     </div>
 
     <!-- 抽屉 -->
-    <el-drawer
-      v-model="drawer"
-      :with-header="false"
-      :size="windowWidth >= 900 ? 500 : '100%'"
-    >
+    <el-drawer v-model="drawer" :with-header="false" :size="windowWidth >= 900 ? 500 : '100%'">
       <div class="filter-content">
         <el-form ref="formRef" :model="form" label-width="auto" :label-position="'top'">
           <el-row>
@@ -136,19 +115,9 @@
             <!-- 飞机号 -->
             <el-col :span="12">
               <el-form-item label="飞机号" prop="acNum">
-                <el-select
-                  v-model="form.acNum"
-                  allow-create
-                  filterable
-                  clearable
-                  placeholder="请选择飞机号"
-                >
-                  <el-option
-                    v-for="item in acNumOptions"
-                    :key="item.id"
-                    :label="item.lineValue"
-                    :value="item.lineValue"
-                  />
+                <el-select v-model="form.acNum" allow-create filterable clearable placeholder="请选择飞机号">
+                  <el-option v-for="item in acNumOptions" :key="item.id" :label="item.lineValue"
+                    :value="item.lineValue" />
                 </el-select>
               </el-form-item>
             </el-col>
@@ -194,9 +163,9 @@
             <el-col :span="24">
               <el-form-item label="报告状态">
                 <el-checkbox v-model="form.pending" :true-value="1" :false-value="0" label="待处理" size="small" />
-                <el-checkbox v-model="form.temppro" label="草稿" size="small" />
-                <el-checkbox v-model="form.proing" label="处理中" size="small" />
-                <el-checkbox v-model="form.proed" label="已处理" size="small" />
+                <el-checkbox v-model="form.temppro" :true-value="1" :false-value="0" label="草稿" size="small" />
+                <el-checkbox v-model="form.proing" :true-value="1" :false-value="0" label="处理中" size="small" />
+                <el-checkbox v-model="form.proed" :true-value="1" :false-value="0" label="已处理" size="small" />
               </el-form-item>
             </el-col>
           </el-row>
@@ -204,34 +173,20 @@
             <!-- 报告提交时间起始 -->
             <el-col :span="12">
               <el-form-item label="提交时间：从" prop="periodFrom">
-                <el-date-picker
-                  v-model="form.periodFrom"
-                  type="date"
-                  placeholder="选择日期"
-                  size="small"
-                />
+                <el-date-picker v-model="form.periodFrom" type="date" placeholder="选择日期" size="small" />
               </el-form-item>
             </el-col>
             <!-- 报告提交时间结束 -->
             <el-col :span="12">
               <el-form-item label="至" prop="periodTo">
-                <el-date-picker
-                  v-model="form.periodTo"
-                  type="date"
-                  placeholder="选择日期"
-                  size="small"
-                />
+                <el-date-picker v-model="form.periodTo" type="date" placeholder="选择日期" size="small" />
               </el-form-item>
             </el-col>
           </el-row>
           <el-row>
             <!-- 不限时间 -->
             <el-col :span="24">
-              <el-checkbox
-                v-model="form.ds"
-                label="不限时间（默认只显示近30天的报告）"
-                size="small"
-              />
+              <el-checkbox v-model="form.ds" label="不限时间（默认只显示近30天的报告）" size="small" />
             </el-col>
           </el-row>
           <el-row>
@@ -268,7 +223,7 @@
         <div class="filter-footer">
           <el-button @click="drawer = false">取消</el-button>
           <el-button type="info" @click="resetForm(formRef)">清空</el-button>
-          <el-button type="primary" @click="getDrList()">确定</el-button>
+          <el-button type="primary" @click="submitForm()">确定</el-button>
         </div>
       </div>
     </el-drawer>
@@ -280,7 +235,7 @@ import Header from "@/components/Header.vue";
 import { drListAPI, drDownAPI } from "@/apis/index";
 import { useUserStore } from "@/stores/userStore";
 import { useRouter } from "vue-router";
-import { ElMessage } from "element-plus";
+import { ElMessage, subMenuProps } from "element-plus";
 import { translateText, getPicList, downloadExcel, getTimeStr } from "@/utils/function";
 import clipBoard from "vue-clipboard3";
 let { toClipboard } = clipBoard(); // 一键复制
@@ -316,6 +271,14 @@ const form = reactive({
   pic: "", // 有图片
 });
 
+let drArguments = reactive({})
+
+// 提交表单
+const submitForm = () => {
+  let page = {...form}
+  getDrList(page)
+}
+
 // 重置表单
 const resetForm = (formEl) => {
   if (!formEl) {
@@ -329,11 +292,12 @@ const resetForm = (formEl) => {
   form.ds = "";
 };
 
+
 // 获取报告列表
 let drList = ref([]);
-const getDrList = async () => {
-  let page = { ...form };
-  page.user = userStore.userInfo.user;
+const getDrList = async (page = drArguments) => {
+  drArguments = { ...page }
+  // page.user = userStore.userInfo.user;
   page.role = userStore.userInfo.role;
   const res = await drListAPI(page);
   drList.value = res.result;
@@ -342,7 +306,16 @@ const getDrList = async () => {
     drawer.value = false;
   }
 };
-getDrList();
+
+// 获取报告列表参数
+const initDrList = () => {
+  let page = { ...form };
+  page.pending = 1 // 待处理
+  page.proing = 1 // 处理中
+
+  getDrList(page)
+}
+initDrList();
 
 // 复制缺陷描述
 const handleCopy = async (text) => {
@@ -397,8 +370,32 @@ const handleDownload = async () => {
   const res = await drDownAPI(page);
   console.log(res)
   // 调用函数处理并下载  
-  downloadExcel(res.result.url, res.result.fileName); 
+  downloadExcel(res.result.url, res.result.fileName);
 };
+
+// 待办、草稿
+const handleFilterDrList = async (data) => {
+  let page = {
+    role: userStore.userInfo.role,
+  }
+  switch (data.status) {
+    case '待办':
+      page.pending = 1
+      break;
+    case '草稿':
+      page.draft = 1
+      break
+    case '我的报告':
+      page.reporterNum = userStore.userInfo.user
+      break
+    case '我处理的':
+      page.processorNum = userStore.userInfo.user
+      break
+  }
+
+  const res = await drListAPI(page);
+  drList.value = res.result;
+}
 </script>
 
 <style scoped lang="scss">
@@ -424,6 +421,7 @@ const handleDownload = async () => {
     padding: 10px;
     border-radius: 4px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.12), 0 0 6px rgba(0, 0, 0, 0.04);
+
     .dr-list {
       .main {
         padding: 60px 6px 40px;
@@ -445,11 +443,13 @@ const handleDownload = async () => {
 
             .title {
               display: flex;
+
               .ac-no {
                 font-size: 1.2em;
                 font-weight: 600;
                 cursor: pointer;
               }
+
               .status {
                 flex: 1;
                 text-align: right;
@@ -506,6 +506,7 @@ const handleDownload = async () => {
                 position: relative;
                 word-break: break-all;
               }
+
               .translation-result:before {
                 content: "(仅供参考)";
                 display: inline-block;
@@ -609,6 +610,7 @@ footer {
 
     .el-row {
       margin: 0;
+
       .el-col {
         padding: 0 5px;
       }
@@ -630,9 +632,11 @@ footer {
 .flex1 {
   flex: 1;
 }
+
 .text-right {
   text-align: right;
 }
+
 .pointer {
   cursor: pointer;
 }
@@ -647,6 +651,7 @@ footer {
 }
 
 @media (max-width: 900px) {
+
   .header-container,
   .footer-container {
     width: 100%;

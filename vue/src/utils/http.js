@@ -24,7 +24,7 @@ httpInstance.interceptors.request.use(config => {
     config.params = removeEmptyStrings(config.params)
   }
   if(config.data){
-    config.data = removeEmptyStrings(config.params)
+    config.data = removeEmptyStrings(config.data)
   }
   return config
  }, e => Promise.reject(e))

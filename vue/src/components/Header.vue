@@ -37,7 +37,7 @@ onMounted(() => {
   // 当组件挂载后开始定时器
   intervalId = setInterval(() => {
     drInit();
-  }, 10000); // 每秒增加count的值
+  }, 30000); // 每秒增加count的值
 });
 
 onUnmounted(() => {
@@ -47,7 +47,7 @@ onUnmounted(() => {
   }
 });
 
-const emit = defineEmits(["initData", "download"]);
+const emit = defineEmits(["initData", "download", "filterDrList"]);
 // 初始化数据
 let drInitData = ref({});
 const drInit = async () => {
@@ -69,12 +69,13 @@ const downloadFun = () => {
   emit("download", {});
 };
 
+const filterDrListByStatus = (status)=>{
+  emit("filterDrList", { status });
+}
+
 // 使用defineProps宏来声明props
 const props = defineProps({
   page: String, // 这里没有指定required，所以它是可选的
-  // 如果有其他props，继续在这里以对象属性的形式声明
-  // count: Number,
-  // isDone: Boolean
 });
 </script>
 
@@ -93,17 +94,17 @@ const props = defineProps({
           </span>
           <template #dropdown>
             <el-dropdown-menu>
-              <el-dropdown-item>我的报告</el-dropdown-item>
-              <el-dropdown-item>我处理的</el-dropdown-item>
+              <el-dropdown-item @click="filterDrListByStatus('我的报告')">我的报告</el-dropdown-item>
+              <el-dropdown-item @click="filterDrListByStatus('我处理的')">我处理的</el-dropdown-item>
               <el-dropdown-item @click="logout()">注销登录</el-dropdown-item>
             </el-dropdown-menu>
           </template>
         </el-dropdown>
         <el-badge class="backlog" :value="drInitData.unproQty" :offset="[0, 7]">
-          <el-button size="small" type="warning">待办</el-button>
+          <el-button size="small" type="warning" @click="filterDrListByStatus('待办')">待办</el-button>
         </el-badge>
         <el-badge class="backlog" :value="drInitData.draftQty" :offset="[0, 7]">
-          <el-button size="small" type="success">草稿</el-button>
+          <el-button size="small" type="success" @click="filterDrListByStatus('草稿')">草稿</el-button>
         </el-badge>
       </div>
       <div class="header-right">
