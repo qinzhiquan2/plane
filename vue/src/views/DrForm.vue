@@ -234,30 +234,24 @@
                 @change="uploadPics"
               />
               <div id="imgs">
-                <div class="img" v-for="(item, index) in srcList" :key="index">
+                <div class="img" v-for="(item, index) in ruleForm.pic" :key="index">
                   <div class="delete-btn" @click="deletePic(index)">
                     <el-icon><Delete /></el-icon>
                   </div>
                   <el-image
                     :src="item"
-                    :preview-src-list="srcList"
+                    :preview-src-list="ruleForm.pic"
                     :initial-index="index"
                     fit="cover"
                   />
                 </div>
               </div>
-              <div id="imgIcon" @click="picsClick()" v-show="srcList.length < 2">
+              <div id="imgIcon" @click="picsClick()" v-show="ruleForm.pic.length < 2">
                 <el-icon><CirclePlus /></el-icon>
                 <br />
                 最多可传2张
                 <br />
                 单张不超10M
-              </div>
-              <div class="picUploadBtnBox" v-if="false">
-                <div id="picUploadTips">请先上传图片再提交报告</div>
-                <el-button size="small" type="primary" @click="submitPics()"
-                  ><el-icon><Upload /></el-icon>上传图片</el-button
-                >
               </div>
             </el-row>
             <el-row>
@@ -295,7 +289,7 @@
 import { reactive, ref } from "vue";
 import Header from "@/components/Header.vue";
 import { useUserStore } from "@/stores/userStore";
-import { useRouter } from "vue-router";
+import { useRouter, useRoute } from "vue-router";
 import { ElMessage } from "element-plus";
 import {
   mainZoneOptions,
@@ -303,22 +297,14 @@ import {
   defectDescOptions,
   suggestionOptions,
 } from "@/data/data.ts";
-import { picUploadAPI, drFormAPI } from "@/apis/index";
-import { getTimeStr } from "@/utils/function";
+import { drFormAPI, drInfoAPI } from "@/apis/index";
+import { getTimeStr, getPicList } from "@/utils/function";
 
 const userStore = useUserStore();
 const router = useRouter();
+const route = useRoute();
 
-const acNumOptions = ref([]); // 飞机号列表
-// 飞机号改变
-const acNumChange = (value) => {
-  if (value) {
-    let item = acNumOptions.value.find((item) => item.lineValue === value);
-    if (item) {
-      ruleForm.quarterNode = item.lineQtn;
-    }
-  }
-};
+const queryId = ref(route.query.id ?? "");
 
 // 表单属性
 const ruleFormRef = ref();
@@ -339,7 +325,45 @@ const ruleForm = reactive({
   wipNum: "", // WIP号
   suggestion: "", // 建议处理方案
   remark: "", // 备注
+  pic: [], // 图片
 });
+
+const initPage = async () => {
+  if (queryId.value) {
+    let page = {
+      id: queryId.value,
+      user: userStore.userInfo.user,
+    };
+    let res = await drInfoAPI(page);
+
+    if (!res.success) {
+      setTimeout(() => {
+        router.replace({ path: "/drlist" });
+      }, 1000);
+    } else {
+      if (res.result.pic) {
+        res.result.pic = getPicList(res.result.pic);
+      } else {
+        res.result.pic = [];
+      }
+      for (const key in ruleForm) {
+        ruleForm[key] = res.result[key];
+      }
+    }
+  }
+};
+initPage();
+
+const acNumOptions = ref([]); // 飞机号列表
+// 飞机号改变
+const acNumChange = (value) => {
+  if (value) {
+    let item = acNumOptions.value.find((item) => item.lineValue === value);
+    if (item) {
+      ruleForm.quarterNode = item.lineQtn;
+    }
+  }
+};
 
 // 表单校验规则
 const rules = reactive({
@@ -358,7 +382,6 @@ const getSubPartOptions = () => {
 };
 
 // 图片列表
-const srcList = ref([]);
 const pics = ref(null);
 // 点击上传照片图标
 const picsClick = () => {
@@ -369,49 +392,61 @@ const uploadPics = (event) => {
   const file = event.target.files[0];
   const reader = new FileReader();
   reader.onload = function (event) {
-    srcList.value.push(event.target.result);
+    ruleForm.pic.push(event.target.result);
   };
   reader.readAsDataURL(file);
 };
 // 删除照片
 const deletePic = (index) => {
-  srcList.value.splice(index, 1);
-};
-// 提交图片 弃用
-const submitPics = async () => {
-  let user = userStore.userInfo.user;
-  let pics = srcList.value;
-  const res = await picUploadAPI({ user, pics });
+  ruleForm.pic.splice(index, 1);
 };
 
 // 提交表单或者保存草稿
 const submitForm = async (formEl, status) => {
   if (!formEl) return;
+  let isPass = true
   if (status == "待处理") {
     await formEl.validate(async (valid, fields) => {
       if (!valid) {
         ElMessage.warning("请检查表单信息");
+        isPass = false
         return false;
       }
     });
   } else if (status == "草稿") {
     if (!ruleForm.acNum) {
       ElMessage.warning("请选择飞机号");
+      isPass = false
       return false;
     }
   }
+  if(!isPass){
+    return
+  }
   let form = { ...ruleForm };
+  if (queryId.value) {
+    form.id = queryId.value;
+  }
   form.reporterName = userStore.userInfo.name; // 报告人
   form.reporterNum = userStore.userInfo.user; // 报告人工号
   form.reportTime = getTimeStr(new Date(), false); // 报告时间
   form.status = status; // 状态
-  form.pics = srcList.value; // 图片
   form.defectFullDesc = getFullDesc(); // 完整描述
+  form.pics = form.pic; // 完整描述
+  delete form.pic;
+  for (let i = 0; i < form.pics.length; i++) {
+    form.pics[i] = form.pics[i].replace(/http:\/\/localhost:3000/g, "");
+  }
+
   const res = await drFormAPI(form);
   if (res.success) {
     ElMessage.success("提交成功");
     resetForm(ruleFormRef.value);
-    srcList.value = [];
+    ruleForm.pic = [];
+
+    setTimeout(() => {
+      router.replace({ path: "/drlist" });
+    }, 1000);
   } else {
     ElMessage.error("提交失败");
   }
@@ -425,7 +460,7 @@ const resetForm = (formEl) => {
 
 // 完整描述：
 const getFullDesc = () => {
-  return `${ruleForm.acNum}${ruleForm.mainZone}${ruleForm.subZone}${ruleForm.mainPart}${ruleForm.subPart}${ruleForm.defectDesc}，数量：${ruleForm.partQty} ${ruleForm.partUnit}`;
+  return `${ruleForm.mainZone}${ruleForm.subZone}${ruleForm.mainPart}${ruleForm.subPart}${ruleForm.defectDesc}，数量：${ruleForm.partQty} ${ruleForm.partUnit}`;
 };
 
 const handleInitData = (drInitData) => {

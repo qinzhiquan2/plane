@@ -38,7 +38,7 @@ httpInstance.interceptors.response.use(res => {
       type: 'warning',
       message: res.data.msg
     })
-    return Promise.reject(res)
+    return res.data
   }
 }, e => {
   console.log(e);
@@ -47,7 +47,7 @@ httpInstance.interceptors.response.use(res => {
     type: 'warning',
     message: e.response.data.message
   })
-  return Promise.reject(e)
+  return e
 })
 
 

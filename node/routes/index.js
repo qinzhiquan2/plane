@@ -11,7 +11,7 @@ const secret = 'plane'; // 密钥
 // 验证token中间件
 function jwtAuth(req, res, next) {
   // 从请求头中获取token  
-  if(!req.headers['authorization']){
+  if (!req.headers['authorization']) {
     res.status(403).send({
       success: false,
       msg: '请先登录'
@@ -31,17 +31,17 @@ function jwtAuth(req, res, next) {
 
   // 验证token  
   jwt.verify(token, secret, (err, user) => {
-      if (err) {
-        res.status(403).send({
-          success: false,
-          msg: '请先登录'
-        });
-        return;
-      }
+    if (err) {
+      res.status(403).send({
+        success: false,
+        msg: '请先登录'
+      });
+      return;
+    }
 
-      // 将用户信息添加到请求对象上，以便在后续中间件或路由处理器中使用  
-      req.user = user;
-      next();
+    // 将用户信息添加到请求对象上，以便在后续中间件或路由处理器中使用  
+    req.user = user;
+    next();
   });
 }
 
@@ -51,7 +51,7 @@ router.post('/login', async (req, res) => {
   let userData = await utils.getUserDataAsync(user, password)
 
   if (userData.success) {
-    const token = jwt.sign({ userId: userData.result.id }, secret, { expiresIn: '240h' }); 
+    const token = jwt.sign({ userId: userData.result.id }, secret, { expiresIn: '240h' });
     userData.result.token = token
     res.status(200).send({
       success: true,
@@ -84,26 +84,29 @@ router.get('/dr_init', jwtAuth, async (req, res) => {
   })
 });
 
+// 获取缺陷报告信息
+router.get('/dr_info', jwtAuth, async (req, res) => {
+  let { id, user } = req.query
+  let drInfo = await utils.getDrInfoAsync(id, user)
+  res.status(200).send({
+    success: drInfo.success,
+    msg: drInfo.msg,
+    result: drInfo.result
+  })
+})
+
 
 
 //获取缺陷报告列表
 router.get('/dr_list', jwtAuth, async (req, res) => {
-  let sqlStr = utils.getDrListSql(req.query)
-  utils.db.query(sqlStr, [], (err, result) => {
-    if (err) {
-      res.status(500).send({
-        success: false,
-        msg: '获取缺陷报告列表失败',
-        sql: sqlStr,
-        err
-      })
-    } else {
-      res.status(200).send({
-        success: true,
-        msg: '获取缺陷报告列表成功',
-        result,
-        sql: sqlStr
-      });
+  const total = await utils.getDrListSql(req.query, false, true)
+  const list = await utils.getDrListSql(req.query, false, false)
+  res.status(200).send({
+    success: true,
+    msg: '获取缺陷报告列表成功',
+    result: {
+      total: total.result[0].total,
+      list: list.result
     }
   })
 });
@@ -115,23 +118,34 @@ router.post('/dr_form', jwtAuth, async (req, res) => {
 
   // 保存图片
   if (pics && pics.length) {
+    let dir = `${utils.picDir}${utils.getYearAndMonth()}`
     let [pic1, pic2] = pics;
 
-    let dir = `${utils.picDir}${utils.getYearAndMonth()}`
-    let fileName = `${reporterNum}_${utils.getTimeStr()}.jpg`
+    if (pic1.indexOf('data:image') == -1) {
+      pic.push(pic1)
+    } else {
 
-    // 保存Base64编码的图片到文件  
-    let res1 = await utils.saveBase64ToFile(pic1, fileName, dir);
-    if (res1) {
-      pic.push(`/${dir}/${fileName}`);
-    }
-
-    if (pic2) {
       let fileName = `${reporterNum}_${utils.getTimeStr()}.jpg`
-      let res2 = await utils.saveBase64ToFile(pic2, fileName, dir);
-      if (res2) {
+
+      // 保存Base64编码的图片到文件  
+      let res1 = await utils.saveBase64ToFile(pic1, fileName, dir);
+      if (res1) {
         pic.push(`/${dir}/${fileName}`);
       }
+    }
+
+
+    if (pic2) {
+      if (pic2.indexOf('data:image') == -1) {
+        pic.push(pic2)
+      } else {
+        let fileName = `${reporterNum}_${utils.getTimeStr()}.jpg`
+        let res2 = await utils.saveBase64ToFile(pic2, fileName, dir);
+        if (res2) {
+          pic.push(`/${dir}/${fileName}`);
+        }
+      }
+
     }
   }
   if (pic.length) {
@@ -187,13 +201,7 @@ router.post('/dr_form', jwtAuth, async (req, res) => {
 // 下载缺陷报告excel
 router.get('/dr_download', jwtAuth, async (req, res) => {
   try {
-    const query = utils.getDrListSql(req.query, true)
-    const rows = await new Promise((resolve, reject) => {
-      utils.db.query(query, (err, results) => {
-        if (err) reject(err);
-        resolve(results);
-      });
-    });
+    const rows = await utils.getDrListSql(req.query, true)
     // 创建一个工作簿  
     const workbook = new ExcelJS.Workbook();
     const worksheet = workbook.addWorksheet(`缺陷报告清单${utils.getTimeStr()}`);

@@ -58,6 +58,7 @@ const drInit = async () => {
   drInitData.value = res.result;
   emit("initData", { ...drInitData.value });
 };
+defineExpose({ drInit })
 
 // 刷新页面
 const refreshFun = () => {
@@ -123,13 +124,13 @@ const props = defineProps({
         </template>
 
         <el-tooltip content="列表" placement="bottom">
-          <el-button @click="replaceUrl('/drlist', { id: 12 })" size="small" circle
+          <el-button @click="replaceUrl('/drlist')" size="small" circle
             ><el-icon><Tickets /></el-icon
           ></el-button>
         </el-tooltip>
 
         <el-tooltip content="新增" placement="bottom">
-          <el-button @click="replaceUrl('/drform', { id: 12 })" size="small" circle
+          <el-button @click="replaceUrl('/drform')" size="small" circle
             ><el-icon><Plus /></el-icon
           ></el-button>
         </el-tooltip>

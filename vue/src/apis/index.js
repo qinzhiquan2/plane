@@ -13,18 +13,6 @@ export const loginAPI = ({ user, password }) => {
   })
 }
 
-// 图片上传接口
-export const picUploadAPI = ({ user, pics }) => {
-  return request({
-    url: '/pic_upload',
-    method: 'POST',
-    data: {
-      user,
-      pics
-    }
-  })
-}
-
 // 插入或更新缺陷报告表单
 export const drFormAPI = (form) => {
   return request({
@@ -52,10 +40,19 @@ export const drInitAPI = (page) => {
   })
 }
 
-// 插入或更新缺陷报告表单
+// 下载报告表单
 export const drDownAPI = (page) => {
   return request({
     url: '/dr_download',
+    method: 'GET',
+    params: page
+  })
+}
+
+// 获取缺陷报告信息
+export const drInfoAPI = (page) => {
+  return request({
+    url: '/dr_info',
     method: 'GET',
     params: page
   })

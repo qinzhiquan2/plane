@@ -51,6 +51,29 @@ function getUserPlaneAsync(user) {
     });
 }
 
+// 获取缺陷报告信息
+function getDrInfoAsync(id, user) {
+    let sqlStr = `select * from tb_dr where id = ${id}`;
+    return new Promise((resolve, reject) => {
+        db.query(sqlStr, [], (err, result) => {
+            if (err) {
+                reject({ success: false, msg: '服务器错误' });
+            } else {
+                if (result.length > 0) {
+                    if(result[0].reporterNum != user){
+                        resolve({ success: false, msg: '不是自己的报告，没有权限修改' });
+                    }else {
+                        resolve({ success: true,  msg: '获取缺陷报告信息成功', result: result[0] });
+                    }
+                    
+                } else {
+                    resolve({ success: false, msg: '没找到数据' });
+                }
+            }
+        });
+    });
+}
+
 // 获取待处理的缺陷报告数量
 async function getUserPendingDrAsync() {
     let sqlStr = `SELECT COUNT(*) AS pending_count FROM tb_dr WHERE status = '待处理'`;
@@ -130,15 +153,24 @@ const getYearAndMonth = (time = new Date()) => { return new Date(time).getFullYe
 
 
 // 获取缺陷报告列表的sql
-function getDrListSql(query, isDownload = false) {
-    let { user,reporterNum, processorNum, drid, ac, dftdsc, rptrna, rptrnu, prorna, prornu, pending, temppro, proing, proed,draft, periodFrom, periodTo, ds, partNo, refTo, cardNum, pic, p } = query
-    p = p || 1
-    let start = (p - 1) * 100, end = p * 100
+function getDrListSql(query, isDownload = false, isCount = false) {
+    
+    let { user, reporterNum, processorNum, drid, ac, dftdsc, rptrna, rptrnu, prorna, prornu, pending, proing, proed, draft, periodFrom, periodTo, ds, partNo, refTo, cardNum, pic, page, pageSize } = query
+    page = page || 1
+    let start = (page - 1) * pageSize
     let sqlStr = ''
 
-    sqlStr = `SELECT * FROM tb_dr WHERE 1 = 1 `
+    if (isCount) {
+        sqlStr = `SELECT count(*) as total FROM tb_dr WHERE status != '已删除' `
+    } else {
+        sqlStr = `SELECT * FROM tb_dr WHERE status != '已删除' `
+    }
 
+    // 报告人员工号
+    if (reporterNum) {
+        sqlStr += ` and reporterNum = ${reporterNum}`
 
+    }
 
     // 报告人员工号
     if (reporterNum) {
@@ -202,16 +234,29 @@ function getDrListSql(query, isDownload = false) {
     // 开卡卡号
     if (cardNum) sqlStr += ` and cardNum like '%${cardNum}%'`
     // 有图片
-    if (pic) sqlStr += ` and pics is not null and pics<>''`
-    // 分页
-    if (!isDownload) {
-        sqlStr += ` order by reportTime desc limit ${start}, ${end}`
-    } else {
-        sqlStr += ` order by reportTime desc`
+    if (pic) sqlStr += ` and pic is not null and pic<>''`
+    if (!isCount) {
+        // 分页
+        if (!isDownload) {
+            sqlStr += ` order by reportTime desc limit ${start}, ${pageSize}`
+        } else {
+            sqlStr += ` order by reportTime desc`
+        }
     }
-    return sqlStr
+    console.log(sqlStr)
+    // return sqlStr
+    return new Promise((resolve, reject) => {
+        db.query(sqlStr, [], (err, result) => {
+            if (err) {
+                reject({ success: false, msg: '服务器错误' });
+            } else {
+                resolve({ success: true, msg: '获取缺陷报告列表成功', result });
+            }
+        });
+    });
 
 }
+
 
 // 获取30天前当前时间
 function getThirtyDaysAgo() {
@@ -243,4 +288,5 @@ module.exports = {
     getTimeStr, // 获取当前时间
     getYearAndMonth, // 获取年月
     getDrListSql, // 获取缺陷报告列表的sql
+    getDrInfoAsync, // 获取缺陷报告信息
 };
