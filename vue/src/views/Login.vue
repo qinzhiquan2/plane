@@ -43,8 +43,8 @@ const userStore = useUserStore();
 
 // 1. 准备表单对象
 const form = ref({
-  user: "000000",
-  password: "000000",
+  user: "000001",
+  password: "000001",
   agree: true,
 });
 
@@ -81,11 +81,13 @@ const doLogin = () => {
     // 以valid做为判断条件 如果通过校验才执行登录逻辑
     if (valid) {
       // TODO LOGIN
-      await userStore.getUserInfo({ user, password });
-      // 1. 提示用户
-      ElMessage({ type: "success", message: "登录成功" });
-      // 2. 跳转首页
-      router.replace({ path: "/home" });
+      let res = await userStore.getUserInfo({ user, password });
+      if (res.success) {
+        //  1. 提示用户
+        ElMessage({ type: "success", message: "登录成功" });
+        // 2. 跳转首页
+        router.replace({ path: "/home" });
+      }
     }
   });
 };

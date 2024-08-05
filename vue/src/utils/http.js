@@ -4,7 +4,7 @@ import { ElMessage } from 'element-plus'
 import { useUserStore } from '@/stores/userStore'
 import { removeEmptyStrings } from "@/utils/function";
 const httpInstance = axios.create({
-  baseURL: 'http://localhost:3000/',
+  baseURL: 'http://192.168.224.82:3000/',
   timeout: 5000
 })
 
@@ -41,11 +41,10 @@ httpInstance.interceptors.response.use(res => {
     return res.data
   }
 }, e => {
-  console.log(e);
   // 统一错误提示
   ElMessage({
     type: 'warning',
-    message: e.response.data.message
+    message: e.response.data.msg
   })
   return e
 })

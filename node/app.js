@@ -13,7 +13,8 @@ app.use(bodyParser.urlencoded({ limit: '50mb', extended: false }));//解析post�
 
 // 使用CORS中间件，配置跨域  
 app.use(cors({  
-    origin: ['https://example.com', 'http://localhost:5173'], // 限制允许的源  
+    origin: true, // 允许任何源  
+    // origin: ['https://example.com', 'http://localhost:5173'], // 限制允许的源  
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], // 允许的HTTP方法  
     allowedHeaders: ['Content-Type', 'Authorization'], // 允许的HTTP头  
     credentials: true, // 是否允许发送Cookie  
@@ -36,7 +37,7 @@ app.use('/', router);
 app.use('/public', express.static('./public'));
 
 //配置服务端口 端口号3000（启动文件）
-var server = app.listen(3000, 'localhost', function () {
+var server = app.listen(3000, '192.168.224.82', function () {
     var host = server.address().address;
     var port = server.address().port;
     session.HTTP_PORT = 'http://' + host + ':' + port +'/';

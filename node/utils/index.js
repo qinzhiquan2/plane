@@ -75,8 +75,11 @@ function getDrInfoAsync(id, user) {
 }
 
 // 获取待处理的缺陷报告数量
-async function getUserPendingDrAsync() {
-    let sqlStr = `SELECT COUNT(*) AS pending_count FROM tb_dr WHERE status = '待处理'`;
+async function getUserPendingDrAsync(user, role) {
+    let sqlStr = `SELECT COUNT(*) AS pending_count FROM tb_dr WHERE status in ('待处理', '处理中')`;
+    if(role.indexOf('1') == -1){
+        sqlStr += ` and reporterNum = ${user}`;
+    }
     return new Promise((resolve, reject) => {
         db.query(sqlStr, [], (err, result) => {
             if (err) {
@@ -89,8 +92,11 @@ async function getUserPendingDrAsync() {
 }
 
 // 获取草稿的缺陷报告数量
-async function getUserDraftDrAsync(user) {
-    let sqlStr = `SELECT COUNT(*) AS pending_count FROM tb_dr WHERE status = '草稿' and reporterNum = ${user};`;
+async function getUserDraftDrAsync(user, role) {
+    let sqlStr = `SELECT COUNT(*) AS pending_count FROM tb_dr WHERE status = '草稿' `;
+    if(role.indexOf('1') == -1){
+        sqlStr += ` and reporterNum = ${user}`;
+    }
     return new Promise((resolve, reject) => {
         db.query(sqlStr, [], (err, result) => {
             if (err) {
@@ -155,7 +161,7 @@ const getYearAndMonth = (time = new Date()) => { return new Date(time).getFullYe
 // 获取缺陷报告列表的sql
 function getDrListSql(query, isDownload = false, isCount = false) {
     
-    let { user, reporterNum, processorNum, drid, ac, dftdsc, rptrna, rptrnu, prorna, prornu, pending, proing, proed, draft, periodFrom, periodTo, ds, partNo, refTo, cardNum, pic, page, pageSize } = query
+    let { user, role, reporterNum, processorNum, drid, ac, dftdsc, rptrna, rptrnu, prorna, prornu, pending, proing, proed, draft, periodFrom, periodTo, ds, partNo, refTo, cardNum, pic, page, pageSize } = query
     page = page || 1
     let start = (page - 1) * pageSize
     let sqlStr = ''
@@ -207,10 +213,10 @@ function getDrListSql(query, isDownload = false, isCount = false) {
 
     // 报告状态
     let status = ''
-    if (pending) status += `'待处理',`
-    if (draft) status += `'草稿',`
-    if (proing) status += `'处理中',`
-    if (proed) status += `'已处理',`
+    if (pending == 1) status += `'待处理',`
+    if (draft == 1) status += `'草稿',`
+    if (proing == 1) status += `'处理中',`
+    if (proed == 1) status += `'已处理',`
     if (status) sqlStr += ` and status in (${status.slice(0, -1)})`
 
     // 报告提交时间起始
@@ -235,6 +241,10 @@ function getDrListSql(query, isDownload = false, isCount = false) {
     if (cardNum) sqlStr += ` and cardNum like '%${cardNum}%'`
     // 有图片
     if (pic) sqlStr += ` and pic is not null and pic<>''`
+
+    if(role.indexOf('1') == -1){
+        sqlStr += ` and reporterNum = ${user} `
+    }
     if (!isCount) {
         // 分页
         if (!isDownload) {

@@ -16,7 +16,12 @@
               <el-col :span="10"><span class="title">飞机缺陷报告</span></el-col>
               <!-- 完整缺陷 选择框 -->
               <el-col :span="14" class="isFull">
-                <el-checkbox v-model="ruleForm.isFullDesc" label="完整缺陷描述方式填写" />
+                <el-checkbox
+                  v-model="ruleForm.isFullDesc"
+                  :true-value="1"
+                  :false-value="0"
+                  label="完整缺陷描述方式填写"
+                />
               </el-col>
             </el-row>
             <el-row>
@@ -54,7 +59,7 @@
                 </el-form-item>
               </el-col>
             </el-row>
-            <el-row>
+            <el-row v-show="ruleForm.isFullDesc">
               <!-- 主区域 -->
               <el-col :span="12">
                 <el-form-item label="主区域">
@@ -85,7 +90,7 @@
                 </el-form-item>
               </el-col>
             </el-row>
-            <el-row>
+            <el-row v-show="ruleForm.isFullDesc">
               <!-- 主部件 -->
               <el-col :span="12">
                 <el-form-item label="主部件">
@@ -279,7 +284,7 @@
         </div>
       </main>
       <footer>
-        <div class="fullDescBox">完整描述：{{ getFullDesc() }}</div>
+        <div class="fullDescBox">完整描述：{{ getFullDesc(true) }}</div>
       </footer>
     </div>
   </div>
@@ -309,7 +314,7 @@ const queryId = ref(route.query.id ?? "");
 // 表单属性
 const ruleFormRef = ref();
 const ruleForm = reactive({
-  isFullDesc: false, // 完整缺陷描述方式填写
+  isFullDesc: 1, // 完整缺陷描述方式填写
   acNum: "", // 飞机号
   quarterNode: "", // 1/4节点
   relatedCard: "", // 相关工卡
@@ -404,24 +409,24 @@ const deletePic = (index) => {
 // 提交表单或者保存草稿
 const submitForm = async (formEl, status) => {
   if (!formEl) return;
-  let isPass = true
+  let isPass = true;
   if (status == "待处理") {
     await formEl.validate(async (valid, fields) => {
       if (!valid) {
         ElMessage.warning("请检查表单信息");
-        isPass = false
+        isPass = false;
         return false;
       }
     });
   } else if (status == "草稿") {
     if (!ruleForm.acNum) {
       ElMessage.warning("请选择飞机号");
-      isPass = false
+      isPass = false;
       return false;
     }
   }
-  if(!isPass){
-    return
+  if (!isPass) {
+    return;
   }
   let form = { ...ruleForm };
   if (queryId.value) {
@@ -459,8 +464,30 @@ const resetForm = (formEl) => {
 };
 
 // 完整描述：
-const getFullDesc = () => {
-  return `${ruleForm.mainZone}${ruleForm.subZone}${ruleForm.mainPart}${ruleForm.subPart}${ruleForm.defectDesc}，数量：${ruleForm.partQty} ${ruleForm.partUnit}`;
+const getFullDesc = (isSHow = false) => {
+  let result = "";
+  if (ruleForm.mainZone) {
+    result += ruleForm.mainZone;
+  }
+  if (ruleForm.subZone) {
+    result += ruleForm.subZone;
+  }
+  if (ruleForm.mainPart) {
+    result += ruleForm.mainPart;
+  }
+  if (ruleForm.subPart) {
+    result += ruleForm.subPart;
+  }
+  if (ruleForm.defectDesc) {
+    result += ruleForm.defectDesc;
+  }
+  if (isSHow) {
+    if (ruleForm.partQty) {
+      result += `，数量：${ruleForm.partQty} ${ruleForm.partUnit}`;
+    }
+  }
+
+  return result;
 };
 
 const handleInitData = (drInitData) => {

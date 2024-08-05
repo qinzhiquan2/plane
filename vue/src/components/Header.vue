@@ -53,12 +53,13 @@ let drInitData = ref({});
 const drInit = async () => {
   let page = {
     user: userStore.userInfo.user,
+    role: userStore.userInfo.role,
   };
   const res = await drInitAPI(page);
   drInitData.value = res.result;
   emit("initData", { ...drInitData.value });
 };
-defineExpose({ drInit })
+defineExpose({ drInit });
 
 // 刷新页面
 const refreshFun = () => {
@@ -70,9 +71,9 @@ const downloadFun = () => {
   emit("download", {});
 };
 
-const filterDrListByStatus = (status)=>{
+const filterDrListByStatus = (status) => {
   emit("filterDrList", { status });
-}
+};
 
 // 使用defineProps宏来声明props
 const props = defineProps({
@@ -95,17 +96,27 @@ const props = defineProps({
           </span>
           <template #dropdown>
             <el-dropdown-menu>
-              <el-dropdown-item @click="filterDrListByStatus('我的报告')">我的报告</el-dropdown-item>
-              <el-dropdown-item @click="filterDrListByStatus('我处理的')">我处理的</el-dropdown-item>
+              <el-dropdown-item
+                v-if="page == 'drList'"
+                @click="filterDrListByStatus('我的报告')"
+                >我的报告</el-dropdown-item
+              >
+              <el-dropdown-item  v-if="page == 'drList' && userStore.userInfo.role.indexOf('1') != -1" @click="filterDrListByStatus('我处理的')"
+                >我处理的</el-dropdown-item
+              >
               <el-dropdown-item @click="logout()">注销登录</el-dropdown-item>
             </el-dropdown-menu>
           </template>
         </el-dropdown>
-        <el-badge class="backlog" :value="drInitData.unproQty" :offset="[0, 7]">
-          <el-button size="small" type="warning" @click="filterDrListByStatus('待办')">待办</el-button>
+        <el-badge class="backlog"  v-if="page == 'drList'" :value="drInitData.unproQty" :offset="[0, 7]">
+          <el-button size="small" type="warning" @click="filterDrListByStatus('待办')"
+            >待办</el-button
+          >
         </el-badge>
-        <el-badge class="backlog" :value="drInitData.draftQty" :offset="[0, 7]">
-          <el-button size="small" type="success" @click="filterDrListByStatus('草稿')">草稿</el-button>
+        <el-badge class="backlog"  v-if="page == 'drList'" :value="drInitData.draftQty" :offset="[0, 7]">
+          <el-button size="small" type="success" @click="filterDrListByStatus('草稿')"
+            >草稿</el-button
+          >
         </el-badge>
       </div>
       <div class="header-right">

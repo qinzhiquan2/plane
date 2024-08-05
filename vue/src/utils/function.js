@@ -26,6 +26,25 @@ export const getTimeStr = (time = new Date(), notMs = false) => {
     return notMs ? result : result + add00(ms)
 }
 
+export const timeFormat = (time = new Date(), notMs = false) => {
+    const date = new Date(time)
+    // 当前时间 = 包含时差的当前时间 + 时差时间，getTimezoneOffset() 获取时差（以分钟为单位），转为小时需要除以 60
+    date.setHours(date.getHours() + 0)
+    time = new Date(date.getTime());
+    let y = time.getFullYear();
+    let m = time.getMonth() + 1;
+    let d = time.getDate();
+    let h = time.getHours();
+    let mm = time.getMinutes();
+    let s = time.getSeconds();
+    // 毫秒
+    let ms = time.getMilliseconds();
+    let result = y + '-' + add0(m) + '-' + add0(d) + ' ' + add0(h) + ':' + add0(mm) + ':' + add0(s);
+    return notMs ? result : result + '.' + add00(ms)
+    // let result = y + add0(m) + add0(d) + add0(h) + add0(mm) + add0(s);
+    // return notMs ? result : result + add00(ms)
+}
+
 // 翻译
 export async function translateText(query, from = 'zh', to = 'en') {
     var appid = '20240728002110457';

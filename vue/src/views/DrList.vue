@@ -16,11 +16,29 @@
               <div class="item-header">
                 <div class="title">
                   <div class="ac-no">{{ item.acNum }}</div>
-                  <div class="status red">
+                  <div class="status red" v-if="item.status == '待处理'">
                     <el-icon>
                       <Flag />
                     </el-icon>
                     {{ item.status }}
+                  </div>
+                  <div class="status blue" v-if="item.status == '处理中'">
+                    <el-icon>
+                      <Flag />
+                    </el-icon>
+                    {{ item.processorName }}{{ item.status }}
+                  </div>
+                  <div class="status orange" v-if="item.status == '草稿'">
+                    <el-icon>
+                      <Flag />
+                    </el-icon>
+                    {{ item.reporterName }} 暂存
+                  </div>
+                  <div class="status green" v-if="item.status == '已处理'">
+                    <el-icon>
+                      <Flag />
+                    </el-icon>
+                    {{ item.tempSaveByName }}{{ item.status }} {{ item.cardNum }}
                   </div>
                 </div>
                 <div class="info">
@@ -39,7 +57,7 @@
                   <div class="flex1">
                     缺陷描述（
                     <span class="reporter">{{ item.reporterName }}</span>
-                    {{ item.reportTime }}）
+                    {{ timeFormat(item.reportTime, true) }}）
                   </div>
                   <div class="text-right">
                     <el-button-group>
@@ -96,12 +114,114 @@
                       fit="cover"
                       :preview-src-list="getPicList(item.pic)"
                     />
-                    <span>（共2张）</span>
+                    <span>（共{{ getPicList(item.pic).length }}张）</span>
                   </div>
                   <div class="gtp-info"></div>
                 </div>
+                <div class="dr-handle-box" v-show="item.showHandleBox">
+                  <el-form ref="handleFormRef" label-width="auto" :label-position="'top'">
+                    <el-row>
+                      <!-- 处理措施 -->
+                      <el-col :span="15">
+                        <el-form-item label="处理措施" required>
+                          <el-select
+                            v-model="item.method"
+                            allow-create
+                            filterable
+                            clearable
+                            placeholder="请选择处理措施"
+                          >
+                            <el-option
+                              v-for="item in methodOptions"
+                              :key="item.id"
+                              :label="item.label"
+                              :value="item.label"
+                            />
+                          </el-select>
+                        </el-form-item>
+                      </el-col>
+                      <!-- 开出工卡卡号 -->
+                      <el-col :span="9" v-show="item.method === '开卡处理'">
+                        <el-form-item label="开出工卡卡号" required>
+                          <el-input
+                            v-model="item.cardNum"
+                            clearable
+                            placeholder="开出工卡卡号"
+                          />
+                        </el-form-item>
+                      </el-col>
+                    </el-row>
+                    <el-row>
+                      <!-- 备注 -->
+                      <el-col :span="24">
+                        <el-form-item label="备注">
+                          <el-input
+                            v-model="item.remarkPro"
+                            clearable
+                            placeholder="备注"
+                          />
+                        </el-form-item>
+                      </el-col>
+                    </el-row>
+                    <el-row>
+                      <!-- 参考资料 -->
+                      <el-col :span="24">
+                        <el-form-item label="参考资料">
+                          <el-input
+                            v-model="item.referTo"
+                            clearable
+                            placeholder="参考资料"
+                          />
+                        </el-form-item>
+                      </el-col>
+                    </el-row>
+                    <el-row>
+                      <!-- 航材件号 -->
+                      <el-col :span="24">
+                        <el-form-item label="航材件号">
+                          <el-input
+                            v-model="item.partNo"
+                            clearable
+                            placeholder="航材件号"
+                          />
+                        </el-form-item>
+                      </el-col>
+                    </el-row>
+                    <div class="handle-btns">
+                      <el-button-group size="small" v-if="item.status == '处理中'">
+                        <el-button type="info" @click="exitEditDr(item)"
+                          >退出处理</el-button
+                        >
+                        <el-button type="warning" @click="saveAndExitDr(item)"
+                          >暂存并退出</el-button
+                        >
+                        <el-button type="success" @click="saveDr(item)">保存</el-button>
+                        <el-button type="primary" @click="submitDr(item)"
+                          >完成并提交</el-button
+                        >
+                      </el-button-group>
+
+                      <!-- 已处理 -->
+                      <el-button
+                        size="small"
+                        type="warning"
+                        @click="item.showHandleBox = false"
+                        v-if="item.status == '已处理'"
+                        >放弃修改</el-button
+                      >
+                      <el-button
+                        size="small"
+                        type="primary"
+                        @click="submitDr(item)"
+                        v-if="item.status == '已处理'"
+                        >完成修改</el-button
+                      >
+                    </div>
+                  </el-form>
+                </div>
               </div>
-              <div class="item-footer">
+              <!-- 更多 -->
+              <div class="item-footer" v-show="!item.showHandleBox">
                 <div class="pointer show-info-btn">
                   <el-button
                     @click="item.showMoreInfo = true"
@@ -128,13 +248,90 @@
                   </el-button>
                 </div>
                 <div class="opt-btns">
-                  <el-button-group size="small">
+                  <!-- 草稿 -->
+                  <el-button
+                    size="small"
+                    type="danger"
+                    @click="deleteDr(item)"
+                    v-if="
+                      (item.reporterNum == userStore.userInfo.user && (item.status == '草稿' )) 
+                    "
+                    >删除</el-button
+                  >
+                  <el-button
+                    size="small"
+                    type="warning"
+                    @click="editDr(item)"
+                    v-if="
+                      item.reporterNum == userStore.userInfo.user && (item.status == '草稿')
+                    "
+                    >修改</el-button
+                  >
+
+                  <!-- 待处理 -->
+                  <el-button-group
+                    size="small"
+                    v-if="
+                      item.reporterNum == userStore.userInfo.user &&
+                      item.status == '待处理'
+                    "
+                  >
                     <el-button type="info" @click="withdrawDr(item)">撤回</el-button>
                     <el-button type="danger" @click="deleteDr(item)">删除</el-button>
                     <el-button type="warning" @click="editDr(item)">修改</el-button>
                   </el-button-group>
-                  <el-button type="primary" size="small" @click="processorDr(item)"
+                  <el-button
+                    size="small"
+                    type="danger"
+                    @click="deleteDr(item)"
+                    v-if="
+                      (item.reporterNum == userStore.userInfo.user && (item.status == '草稿' || item.status == '待处理')) || (userStore.userInfo.role.indexOf('1') != -1 )
+                    "
+                    >删除</el-button
+                  >
+                  <el-button
+                    type="primary"
+                    size="small"
+                    @click="processorDr(item)"
+                    v-show="
+                      item.status == '待处理' &&
+                      userStore.userInfo.role.indexOf('1') != -1
+                    "
                     >我来处理</el-button
+                  >
+
+                  <!-- 处理中 -->
+                  <el-button
+                    type="warning"
+                    size="small"
+                    @click="exitEditDr(item)"
+                    v-show="
+                      item.status == '处理中' &&
+                      item.processorNum == userStore.userInfo.user
+                    "
+                    >退出处理</el-button
+                  >
+                  <el-button
+                    type="primary"
+                    size="small"
+                    @click="item.showHandleBox = true"
+                    v-show="
+                      item.status == '处理中' &&
+                      item.processorNum == userStore.userInfo.user
+                    "
+                    >继续处理</el-button
+                  >
+
+                  <!-- 已处理 -->
+                  <el-button
+                    type="warning"
+                    size="small"
+                    @click="item.showHandleBox = true"
+                    v-show="
+                      item.status == '已处理' &&
+                      item.processorNum == userStore.userInfo.user
+                    "
+                    >修改备注信息</el-button
                   >
                 </div>
               </div>
@@ -429,19 +626,28 @@ import { drListAPI, drDownAPI, drFormAPI } from "@/apis/index";
 import { useUserStore } from "@/stores/userStore";
 import { useRouter } from "vue-router";
 import { ElMessage, ElMessageBox } from "element-plus";
-import { translateText, getPicList, downloadExcel, getTimeStr } from "@/utils/function";
+import { translateText, getPicList, downloadExcel, timeFormat } from "@/utils/function";
 import clipBoard from "vue-clipboard3";
 let { toClipboard } = clipBoard(); // 一键复制
 import show_pic from "@/assets/images/show_pic.jpg";
+import { methodOptions } from "@/data/data.ts";
 
 const userStore = useUserStore();
 const router = useRouter();
 const drawer = ref(false); // 抽屉
+const handleFormRef = ref(null);
 const headerRef = ref(null);
+
+// const handleForm = reactive({
+//   method: "", // 处理措施
+//   remark: "", // 备注
+//   referTo: "", // 参考资料
+//   partNo: "", // 航材件号
+// });
 
 // 分页
 let currentPage = ref(1);
-let pageSize = ref(10);
+let pageSize = ref(5);
 let total = ref(0);
 
 let acNumOptions = ref([]); // 飞机号列表
@@ -575,6 +781,7 @@ const handleFilterDrList = async (data) => {
   switch (data.status) {
     case "待办":
       page.pending = 1;
+      page.proing = 1;
       break;
     case "草稿":
       page.draft = 1;
@@ -672,16 +879,114 @@ const editDr = async (item) => {
 
 // 我来处理
 const processorDr = async (item) => {
-  ElMessageBox.confirm("该缺陷报告状态将被设为处理中，其他人将无法对其进行任何操作, 是否继续?", "操作确认", {
+  ElMessageBox.confirm(
+    "该缺陷报告状态将被设为处理中，其他人将无法对其进行任何操作, 是否继续?",
+    "操作确认",
+    {
+      confirmButtonText: "确认",
+      cancelButtonText: "取消",
+      type: "warning",
+    }
+  )
+    .then(async () => {
+      item.status = "处理中";
+      let page = { ...item };
+
+      page.processorName = userStore.userInfo.name;
+      page.processorNum = userStore.userInfo.user;
+      const res = await drFormAPI(page);
+      ElMessage({
+        type: "success",
+        message: "操作成功",
+      });
+      item.showHandleBox = true;
+    })
+    .catch(() => {});
+};
+
+// 退出处理
+const exitEditDr = async (item) => {
+  ElMessageBox.confirm("确定退出处理吗?", "操作确认", {
+    confirmButtonText: "确认",
+    cancelButtonText: "取消",
+    type: "warning",
+  })
+    .then(async () => {
+      
+      item.status = "待处理";
+      item.processorName = "";
+      item.processorNum = "";
+      item.method = "";
+      item.cardNum = "";
+      item.remarkPro = "";
+      item.referTo = "";
+      item.partNo = "";
+      let page = { ...item };
+
+      const res = await drFormAPI(page);
+      ElMessage({
+        type: "success",
+        message: "操作成功",
+      });
+      item.showHandleBox = false;
+    })
+    .catch(() => {});
+};
+
+// 暂存并退出
+const saveAndExitDr = async (item) => {
+  item.status = '处理中'
+  item.processorName = userStore.userInfo.name;
+  item.processorNum = userStore.userInfo.user;
+  let page = { ...item };
+  const res = await drFormAPI(page);
+  ElMessage({
+    type: "success",
+    message: "操作成功",
+  });
+  item.showHandleBox = false;
+};
+
+// 保存
+const saveDr = async (item) => {
+  item.status = '处理中'
+  item.processorName = userStore.userInfo.name;
+  item.processorNum = userStore.userInfo.user;
+  let page = { ...item };
+  const res = await drFormAPI(page);
+  ElMessage({
+    type: "success",
+    message: "操作成功",
+  });
+};
+
+// 完成并提交
+const submitDr = async (item) => {
+  if (!item.method) {
+    ElMessage({
+      type: "warning",
+      message: "请选择处理措施",
+    });
+    return;
+  }
+  if (item.method == "开卡处理" && !item.cardNum) {
+    ElMessage({
+      type: "warning",
+      message: "请填写卡号",
+    });
+    return;
+  }
+  ElMessageBox.confirm("请确认各栏信息的正确填写，确定提交吗？", "操作确认", {
     confirmButtonText: "确认",
     cancelButtonText: "取消",
     type: "warning",
   })
     .then(async () => {
       let page = { ...item };
-      page.status = "处理中";
-      page.processorName = userStore.userInfo.name
-      page.processorNum = userStore.userInfo.user
+      page.processorName = userStore.userInfo.name;
+      page.processorNum = userStore.userInfo.user;
+
+      page.status = "已处理";
       const res = await drFormAPI(page);
       ElMessage({
         type: "success",
@@ -825,6 +1130,16 @@ const processorDr = async (item) => {
                 border-top: 1px dashed #ccc;
               }
             }
+            .dr-handle-box {
+              padding-top: 5px;
+              border-top: 1px dashed #ccc;
+              line-height: 1.9em;
+
+              .handle-btns {
+                display: flex;
+                justify-content: flex-end;
+              }
+            }
           }
 
           .item-footer {
@@ -845,6 +1160,7 @@ const processorDr = async (item) => {
             .opt-btns {
               flex: 1;
               text-align: right;
+              margin-right: 3px;
               .el-button-group {
                 margin-right: 3px;
               }
@@ -939,18 +1255,6 @@ footer {
   // height: 100vh;
   // overflow: auto;
 
-  .el-form {
-    flex: 1;
-
-    .el-row {
-      margin: 0;
-
-      .el-col {
-        padding: 0 5px;
-      }
-    }
-  }
-
   .filter-footer {
     width: 70%;
     margin: auto;
@@ -959,8 +1263,29 @@ footer {
   }
 }
 
+.el-form {
+  flex: 1;
+
+  .el-row {
+    margin: 0;
+
+    .el-col {
+      padding: 0 5px;
+    }
+  }
+}
+
 .red {
   color: #e90d0d;
+}
+.blue {
+  color: #337ab7;
+}
+.orange {
+  color: #ff9633;
+}
+.green {
+  color: green;
 }
 
 .flex1 {

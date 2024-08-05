@@ -68,10 +68,10 @@ router.post('/login', async (req, res) => {
 
 // 缺陷列表初始化数据
 router.get('/dr_init', jwtAuth, async (req, res) => {
-  let { user } = req.query
+  let { user, role } = req.query
   let lines = await utils.getUserPlaneAsync(user) // 飞机号选项
-  let unproQty = await utils.getUserPendingDrAsync() // 代表
-  let draftDr = await utils.getUserDraftDrAsync(user) // 缺陷报告列表数量
+  let unproQty = await utils.getUserPendingDrAsync(user, role) // 代办缺陷报告数量
+  let draftDr = await utils.getUserDraftDrAsync(user, role) // 草稿缺陷报告数量
 
   res.status(200).send({
     success: true,
@@ -113,9 +113,14 @@ router.get('/dr_list', jwtAuth, async (req, res) => {
 
 // 插入或更新缺陷报告表单
 router.post('/dr_form', jwtAuth, async (req, res) => {
-  let pic = []
-  let { id, acNum, cardNum, defectDesc, defectFullDesc, descType, fullDesc, isFullDesc, mainPart, mainZone, method, partFIN, partLoc, partNo, partQty, partUnit, pics, processorName, processorNum, quarterNode, referTo, relatedCard, remark, remarkPro, reportTime, reporterName, reporterNum, reviseTime, reviser, status, subPart, subZone, suggestion, tempSaveByName, tempSaveByNum, tempSaveTime, timePro, wipNum, withDraw } = req.body
+  // let pic = []
+  let { pic, id, acNum, cardNum, defectDesc, defectFullDesc, descType, fullDesc, isFullDesc, mainPart, mainZone, method, partFIN, partLoc, partNo, partQty, partUnit, pics, processorName, processorNum, quarterNode, referTo, relatedCard, remark, remarkPro, reportTime, reporterName, reporterNum, reviseTime, reviser, status, subPart, subZone, suggestion, tempSaveByName, tempSaveByNum, tempSaveTime, timePro, wipNum, withDraw } = req.body
 
+  if(pic){
+    pic = pic.split('|')
+  }else [
+    pic = []
+  ]
   // 保存图片
   if (pics && pics.length) {
     let dir = `${utils.picDir}${utils.getYearAndMonth()}`
@@ -201,30 +206,50 @@ router.post('/dr_form', jwtAuth, async (req, res) => {
 // 下载缺陷报告excel
 router.get('/dr_download', jwtAuth, async (req, res) => {
   try {
-    const rows = await utils.getDrListSql(req.query, true)
+    const rowsObj = await utils.getDrListSql(req.query, true)
+    let rows = Object.values(rowsObj.result);
+
+
     // 创建一个工作簿  
     const workbook = new ExcelJS.Workbook();
     const worksheet = workbook.addWorksheet(`缺陷报告清单${utils.getTimeStr()}`);
 
+
     // 添加表头  
     worksheet.columns = [
-      { header: '序号', key: 'index', width: 10 },
-      { header: '#ID', key: 'id', width: 10 },
-      { header: '飞机号', key: 'acNum', width: 30 },
-      { header: '相关工卡', key: 'relatedCard', width: 30 },
+      { header: '序号', key: 'index', width: 5 },
+      { header: '#ID', key: 'id', width: 5 },
+      { header: '飞机号', key: 'acNum', width: 15 },
+      { header: '相关工卡', key: 'relatedCard', width: 15 },
       { header: '缺陷描述', key: 'defectFullDesc', width: 30 },
-      { header: '报告人', key: 'reporterName', width: 30 },
-      { header: '报告时间', key: 'reportTime', width: 30 },
-      { header: '状态', key: 'status', width: 30 },
-      { header: '处理人', key: 'processorName', width: 30 },
-      { header: '处理方案', key: 'method', width: 30 },
-      { header: '开出工卡', key: 'cardNum', width: 30 },
-      { header: '处理时间', key: 'tempSaveTime', width: 30 },
-      { header: '参考资料', key: 'referTo', width: 30 },
-      { header: '航材件号', key: 'partNo', width: 30 },
-      { header: '工艺备注', key: 'remarkPro', width: 30 },
-      { header: '图片', key: 'pic', width: 30 },
+      { header: '报告人', key: 'reporterName', width: 15 },
+      { header: '报告时间', key: 'reportTime', width: 15 },
+      { header: '状态', key: 'status', width: 15 },
+      { header: '处理人', key: 'processorName', width: 15 },
+      { header: '处理方案', key: 'method', width: 15 },
+      { header: '开出工卡', key: 'cardNum', width: 15 },
+      { header: '处理时间', key: 'tempSaveTime', width: 15 },
+      { header: '参考资料', key: 'referTo', width: 15 },
+      { header: '航材件号', key: 'partNo', width: 15 },
+      { header: '工艺备注', key: 'remarkPro', width: 15 },
+      { header: '图片', key: 'pic', width: 15 },
     ];
+
+    // 为第一行的每个表头添加背景颜色  
+    worksheet.getRow(1).eachCell((cell, colNumber) => {
+      cell.fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: 'cccccc00' }, // 背景  
+      };
+
+      // 还可以设置字体等其他样式  
+      cell.font = {
+        bold: true,
+        color: { argb: 'FFFFFFFF' }, // 白色字体  
+        size: 12
+      };
+    });
 
     // 添加数据  
     rows.forEach((row, index) => {

@@ -45,3 +45,9 @@ export const suggestionOptions = [
     { id: 4, label: '在位修理' },
     { id: 5, label: '喷漆' },
 ]
+// 处理措施
+export const methodOptions = [
+    { id: 1, label: '开卡处理' },
+    { id: 2, label: '不需处理' },
+    { id: 3, label: '转其他专业' },
+]

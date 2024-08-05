@@ -24,7 +24,7 @@ if (!userStore.userInfo.user) {
 }
 const goDrList = () => {
   if (userStore.userInfo.user) {
-    if (userStore.userInfo.role.indexOf('管理员') != -1) {
+    if (userStore.userInfo.role.indexOf('1') != -1) {
       router.push("/drlist"); // 管理员
     } else {
       router.push("/drform"); // 普通员工
